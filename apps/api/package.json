@@ -8,7 +8,9 @@
   },
   "scripts": {
     "dev": "bun run prisma:generate && bun --env-file=.env.development --watch src/main.ts",
+    "dev:watch": "bun --env-file=.env.development --watch src/main.ts",
     "dev:staging": "bun run prisma:generate && bun --env-file=.env.staging --watch src/main.ts",
+    "dev:watch:staging": "bun --env-file=.env.staging --watch src/main.ts",
     "start": "bun run prisma:generate && bun --env-file=.env.development src/main.ts",
     "start:staging": "bun run prisma:generate && bun --env-file=.env.staging src/main.ts",
     "lint": "bunx eslint .",

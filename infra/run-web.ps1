@@ -5,7 +5,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$scriptName = if ($Environment -eq "staging") { "dev:web:staging" } else { "dev:web" }
+$scriptName = if ($Environment -eq "staging") { "dev:staging" } else { "dev" }
 
-Write-Host "[run-web] Iniciando frontend em $Environment ($scriptName)" -ForegroundColor Cyan
-bun run $scriptName
+Write-Host "[run-web] Iniciando frontend em $Environment ($scriptName)..." -ForegroundColor Cyan
+bun run --filter @auction/web $scriptName
