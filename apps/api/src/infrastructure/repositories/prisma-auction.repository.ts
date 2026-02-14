@@ -1,15 +1,16 @@
 import { Prisma, type AuctionStatus as PrismaAuctionStatus } from "@prisma/client";
-import { AppError } from "@/application/errors/app-error";
-import type { Auction } from "@/domain/entities/auction";
-import type { Bid } from "@/domain/entities/bid";
+
+import { AppError } from "#application/errors/app-error";
+import type { Auction } from "#domain/entities/auction";
+import type { Bid } from "#domain/entities/bid";
 import type {
   AuctionRepository,
   CloseAuctionResult,
   CreateAuctionInput,
   PlaceBidInput,
   PlaceBidResult
-} from "@/domain/repositories/auction-repository";
-import { prisma } from "@/infrastructure/database/prisma-client";
+} from "#domain/repositories/auction-repository";
+import { prisma } from "#infrastructure/database/prisma-client";
 
 function mapAuction(model: {
   id: string;

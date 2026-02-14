@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "imports": {
+    "#*": "./src/*.ts"
+  },
   "scripts": {
     "dev": "bun run prisma:generate && bun --env-file=.env.development --watch src/main.ts",
     "dev:staging": "bun run prisma:generate && bun --env-file=.env.staging --watch src/main.ts",

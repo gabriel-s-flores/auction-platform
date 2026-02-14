@@ -1,5 +1,5 @@
-import { AppError } from "@/application/errors/app-error";
-import type { AuctionRepository } from "@/domain/repositories/auction-repository";
+import { AppError } from "#application/errors/app-error";
+import type { AuctionRepository } from "#domain/repositories/auction-repository";
 
 interface CloseAuctionInput {
   auctionId: string;
@@ -8,7 +8,7 @@ interface CloseAuctionInput {
 }
 
 export class CloseAuctionUseCase {
-  constructor(private readonly auctionRepository: AuctionRepository) {}
+  constructor(private readonly auctionRepository: AuctionRepository) { }
 
   async execute(input: CloseAuctionInput): Promise<void> {
     const result = await this.auctionRepository.close(input.auctionId, input.userId, input.isAdmin);

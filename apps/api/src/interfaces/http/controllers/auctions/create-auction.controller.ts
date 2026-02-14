@@ -1,7 +1,10 @@
-import type { CreateAuctionUseCase } from "@/application/use-cases/create-auction.use-case";
+import { CreateAuctionUseCase } from "#application/use-cases/create-auction.use-case";
+import { PrismaAuctionRepository } from "#infrastructure/repositories/prisma-auction.repository";
+import type { AuthenticatedUser } from "#interfaces/http/types/authenticated-user";
+import { AppError } from "#application/errors/app-error";
 
 export class CreateAuctionController {
-  constructor(private readonly useCase: CreateAuctionUseCase) {}
+  constructor(private readonly useCase: CreateAuctionUseCase) { }
 
   async handle(input: {
     title: string;

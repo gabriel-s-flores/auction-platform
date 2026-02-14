@@ -1,5 +1,5 @@
-import type { TokenService } from "@/application/services/token-service";
-import type { AuthenticateUserUseCase } from "@/application/use-cases/authenticate-user.use-case";
+import type { TokenService } from "#application/services/token-service";
+import type { AuthenticateUserUseCase } from "#application/use-cases/authenticate-user.use-case";
 
 interface LoginUserInput {
   email: string;
@@ -14,7 +14,7 @@ export class LoginUserUseCase {
   constructor(
     private readonly authenticateUserUseCase: AuthenticateUserUseCase,
     private readonly tokenService: TokenService
-  ) {}
+  ) { }
 
   async execute(input: LoginUserInput): Promise<LoginUserOutput> {
     const user = await this.authenticateUserUseCase.execute({

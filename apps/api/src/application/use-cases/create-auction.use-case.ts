@@ -1,6 +1,6 @@
-import { AppError } from "@/application/errors/app-error";
-import type { Auction } from "@/domain/entities/auction";
-import type { AuctionRepository } from "@/domain/repositories/auction-repository";
+import { AppError } from "#application/errors/app-error";
+import type { Auction } from "#domain/entities/auction";
+import type { AuctionRepository } from "#domain/repositories/auction-repository";
 
 interface CreateAuctionInput {
   title: string;
@@ -11,7 +11,7 @@ interface CreateAuctionInput {
 }
 
 export class CreateAuctionUseCase {
-  constructor(private readonly auctionRepository: AuctionRepository) {}
+  constructor(private readonly auctionRepository: AuctionRepository) { }
 
   async execute(input: CreateAuctionInput): Promise<Auction> {
     if (input.startingPrice <= 0) {

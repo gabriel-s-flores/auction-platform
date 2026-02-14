@@ -1,6 +1,6 @@
-import type { User } from "@/domain/entities/user";
-import type { CreateUserInput, UserRepository } from "@/domain/repositories/user-repository";
-import { prisma } from "@/infrastructure/database/prisma-client";
+import type { User } from "#domain/entities/user";
+import type { CreateUserInput, UserRepository } from "#domain/repositories/user-repository";
+import { prisma } from "#infrastructure/database/prisma-client";
 
 function mapUser(model: {
   id: string;

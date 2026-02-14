@@ -1,6 +1,6 @@
-import { AppError } from "@/application/errors/app-error";
-import type { Bid } from "@/domain/entities/bid";
-import type { AuctionRepository } from "@/domain/repositories/auction-repository";
+import { AppError } from "#application/errors/app-error";
+import type { Bid } from "#domain/entities/bid";
+import type { AuctionRepository } from "#domain/repositories/auction-repository";
 
 interface PlaceBidInput {
   auctionId: string;
@@ -13,7 +13,7 @@ export interface PlaceBidOutput {
 }
 
 export class PlaceBidUseCase {
-  constructor(private readonly auctionRepository: AuctionRepository) {}
+  constructor(private readonly auctionRepository: AuctionRepository) { }
 
   async execute(input: PlaceBidInput): Promise<PlaceBidOutput> {
     if (input.amount <= 0) {

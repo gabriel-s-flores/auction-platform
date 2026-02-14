@@ -1,4 +1,4 @@
-import type { PasswordHasher } from "@/application/services/password-hasher";
+import type { PasswordHasher } from "#application/services/password-hasher";
 
 export class BunPasswordHasher implements PasswordHasher {
   async hash(value: string): Promise<string> {

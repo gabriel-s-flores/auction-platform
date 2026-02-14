@@ -1,5 +1,5 @@
-import type { Auction } from "@/domain/entities/auction";
-import type { Bid } from "@/domain/entities/bid";
+import type { Auction } from "#domain/entities/auction";
+import type { Bid } from "#domain/entities/bid";
 
 export interface CreateAuctionInput {
   title: string;

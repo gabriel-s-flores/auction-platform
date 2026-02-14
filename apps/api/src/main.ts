@@ -1,5 +1,5 @@
-import { env } from "@/infrastructure/config/env";
-import { buildApp } from "@/interfaces/http/app";
+import { env } from "#infrastructure/config/env";
+import { buildApp } from "#interfaces/http/app";
 
 const app = buildApp();
 

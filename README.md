@@ -1,86 +1,138 @@
-# auction-platform
+# Auction Platform
 
-Monorepo profissional com **Bun** (runtime + package manager), orientado a Windows/PowerShell.
+Monorepo profissional desenvolvido com **Bun**, utilizando **Clean Architecture** no backend e **Feature-based Architecture** no frontend.
 
-## Arquitetura adotada
+O projeto foca em:
+- **Segurança e Performance por padrão**.
+- **Consistência técnica** através de linting rigoroso e tipos compartilhados.
+- **Experiência de desenvolvimento** flexível (Docker para Linux/WSL e Nativo para Windows).
 
-- **Monorepo com Bun Workspaces**: menor complexidade operacional e ótima integração com Bun.
-- **Backend em Clean Architecture**: separação entre domínio, casos de uso, interfaces e infraestrutura.
-- **Frontend feature-based**: organização por contexto de negócio para escalar funcionalidades.
-- **Design System desacoplado**: pacote `@auction/ui` consumido pelo frontend.
-- **Config centralizada**: pacote `@auction/config` para ESLint, Prettier, TSConfig e Tailwind.
+---
 
-## Estrutura
+## 🏗️ Arquitetura e Estrutura
+
+O projeto é um Monorepo organizado com Bun Workspaces:
 
 ```txt
 apps/
-  web/      # React + Vite
-  api/      # REST API (Bun)
+  api/          # Backend (Fastify + Prisma + Clean Arch)
+  web/          # Frontend (React + Vite + Feature-based)
+
 packages/
-  ui/       # Design System compartilhado
-  config/   # Configs compartilhadas
-infra/
-  *.ps1     # automações Windows PowerShell
+  ui/           # Design System compartilhado (Componentes React)
+  config/       # Configurações compartilhadas (TS, ESLint, Tailwind)
+  shared-types/ # Tipos compartilhados entre API e Web (Contratos)
+
+infra/          # Scripts de automação (PowerShell) e Docker
 ```
 
-## Requisitos
+### Backend (`apps/api`)
+Segue **Clean Architecture** estrita com as seguintes camadas:
+- **Domain**: Entidades e regras de negócio puras (sem dependências externas).
+- **Application**: Casos de uso (Use Cases) que orquestram o fluxo da aplicação.
+- **Infrastructure**: Implementações concretas (Banco de dados/Prisma, Hash, Token, etc).
+- **Interfaces**: Controladores HTTP (Fastify) e DTOs.
 
-- Windows + PowerShell
-- Bun instalado (https://bun.sh)
-- PostgreSQL instalado localmente no Windows (sem Docker)
+### Frontend (`apps/web`)
+Organizado por **Features** para escalar melhor:
+- `features/*`: Cada funcionalidade tem sua própria pasta com componentes, hooks e serviços isolados.
+- `shared/*`: Componentes de UI genéricos e utilitários globais.
+- `pages/*`: Rotas da aplicação que compõem as features.
 
-## Comandos principais
+---
 
-```powershell
-bun run setup
-bun run db:setup
-bun run db:setup:staging
-bun run db:migrate
-bun run db:migrate:staging
-bun run dev
-bun run staging
-bun run lint
-bun run typecheck
-```
+## ⚡ Core Business: Concorrência em Lances
 
-## PostgreSQL no Windows (setup rápido)
+Um ponto crítico deste projeto é a garantia de integridade em leilões concorrentes.
 
-1. Instale PostgreSQL para Windows (instalador oficial da EDB).
-2. Durante a instalação, defina usuário/senha (ex.: `postgres` / `postgres`).
-3. Adicione o diretório `bin` ao PATH (exemplo):
-   - `C:\Program Files\PostgreSQL\17\bin`
-4. Valide no PowerShell:
+**Como evitamos Race Conditions:**
+No caso de uso de lance (`PlaceBidUseCase`), o backend utiliza:
+1.  **Transação SQL** com Prisma `$transaction`.
+2.  Nível de isolamento **SERIALIZABLE**.
+3.  Lock pessimista (`SELECT ... FOR UPDATE`) na linha do leilão.
 
-```powershell
-psql --version
-```
+Isso garante que lances simultâneos no mesmo leilão sejam processados serialmente: apenas uma transação consegue validar o valor, atualizar o `highestBid` e gravar o lance vencedor por vez. **Ou tudo comita, ou nada persiste.**
 
-5. Configure `apps/api/.env.development` e `apps/api/.env.staging` com:
-   - `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
-   - `DATABASE_URL`
-   - `NODE_ENV`, `APP_ENV`
+---
 
-6. Execute bootstrap de banco + migrations + seed por ambiente:
+## 🚀 Como rodar o projeto
 
-```powershell
-bun run db:setup
-bun run db:setup:staging
-```
+Escolha o método mais adequado para o seu sistema operacional.
 
-## Como evitamos race conditions em lances
+### 🐧 Opção 1: Linux / WSL (Recomendado)
 
-No caso de uso de lance, o backend usa transação SQL com Prisma `$transaction` + isolamento `SERIALIZABLE` e lock pessimista (`SELECT ... FOR UPDATE`) na linha do leilão. Com isso, lances concorrentes no mesmo leilão são serializados: apenas uma transação consegue validar/atualizar `highestBid` e gravar o lance vencedor por vez.
+Utiliza **Docker Compose** para orquestrar API, Web e Banco de Dados. Ideal para garantir o mesmo ambiente independente da máquina.
 
-As operações críticas (validação de status/valor, insert em `bids`, update de `auctions.highestBid` e incremento de `version`) ocorrem no mesmo bloco transacional, garantindo atomicidade: ou tudo comita, ou nada persiste.
+**Pré-requisitos:**
+- [Docker](https://docs.docker.com/engine/install/) e [Docker Compose](https://docs.docker.com/compose/install/)
+- [Make](https://www.gnu.org/software/make/) (opcional, para usar os atalhos)
 
-## Ambientes
+#### Passos Rápidos
 
-- `development`
-- `staging` (homologação local)
+1. **Setup Inicial**
+   Constrói os containers, sobe o banco, aplica migrações e popula com dados de teste (`seed`).
+   ```bash
+   make setup
+   ```
 
-No frontend (`apps/web`), use `.env.development`, `.env.staging` e `.env.example`.
+2. **Iniciar Aplicação**
+   Inicia a API, o Frontend e o Banco de Dados em modo de desenvolvimento com hot-reload.
+   ```bash
+   make dev
+   ```
+   - **Frontend:** [http://localhost:5173](http://localhost:5173) (usuário admin: `admin@example.com` / `12345678`)
+   - **API:** [http://localhost:3333](http://localhost:3333)
 
-### Portas e bancos (dev + staging simultâneos)
+#### Comandos Úteis (Make)
+
+| Comando | Descrição |
+|---|---|
+| `make down` | Para e remove os containers da execução atual. |
+| `make logs` | Visualiza logs unificados de todos os serviços. |
+| `make shell-api` | Acessa o shell do container da API. |
+| `make migrate` | Executa `prisma migrate deploy` no container. |
+
+---
+
+### 🪟 Opção 2: Windows (Nativo)
+
+Método tradicional usando PowerShell. Requer instalação local das ferramentas.
+
+**Pré-requisitos:**
+- [Bun](https://bun.sh/) instalado.
+- [PostgreSQL](https://www.postgresql.org/download/windows/) instalado e rodando localmente.
+- PowerShell.
+
+#### Configuração do Banco
+1. Instale o PostgreSQL (versão 16+ recomendada).
+2. Configure as variáveis em `apps/api/.env.development`:
+   ```env
+   DATABASE_URL="postgresql://usuario:senha@localhost:5432/auction_dev?schema=public"
+   ```
+
+#### Passos Rápidos
+
+1. **Instalar Dependências**
+   ```powershell
+   bun install
+   ```
+
+2. **Setup do Banco (Migrations + Seed)**
+   ```powershell
+   bun run db:setup
+   ```
+
+3. **Iniciar Aplicação**
+   Roda API e Frontend simultaneamente.
+   ```powershell
+   bun run dev
+   ```
+
+---
+
+## 🌍 Ambientes e Portas
+
+O projeto suporta ambientes de `development` e `staging` rodando simultaneamente (útil para testar features sem quebrar o dev).
 
 | Serviço | Development | Staging |
 |---|---:|---:|
@@ -88,106 +140,39 @@ No frontend (`apps/web`), use `.env.development`, `.env.staging` e `.env.example
 | Web | `http://localhost:5173` | `http://localhost:4173` |
 | PostgreSQL DB | `auction_dev` | `auction_staging` |
 
-Com isso, os dois ambientes podem rodar na mesma máquina sem conflito.
+No frontend, as variáveis são carregadas de `.env.development` ou `.env.staging` baseadas no script executado (`dev` vs `dev:staging`).
 
-## Frontend web (Bun + React + Vite)
+---
 
-Stack utilizada no app web: 
+## ✅ Qualidade e Governança
 
-- Bun
-- React + Vite
-- TypeScript (strict)
-- Tailwind
-- React Query
-- Axios
+Mantemos alto padrão de código com ferramentas automatizadas que rodam antes de cada commit (`husky` + `lint-staged`).
 
-### Páginas implementadas (fluxo mínimo)
+### Ferramentas
+- **ESLint**: Análise estática de código (regras estritas).
+- **Prettier**: Formatação automática de código.
+- **Commitlint**: Padronização de mensagens de commit (Conventional Commits).
+- **TypeScript**: Configurado em modo estrito (`strict: true`).
 
-- `/login`
-- `/register`
-- `/auctions`
-- `/auctions/new` (protegida)
-- `/auctions/:auctionId`
+### Comandos de Verificação
+Antes de abrir um PR, é obrigatório rodar:
 
-### Scripts Bun (web)
+```bash
+# Verifica estilo e erros de código em todo o monorepo
+bun run lint
 
-```powershell
-bun run --filter @auction/web dev
-bun run --filter @auction/web dev:staging
+# Verifica integridade de tipos TypeScript em todo o monorepo
+bun run typecheck
 ```
 
-### Variáveis de ambiente do frontend
+## 🛠️ Troubleshooting
 
-Arquivos esperados:
+**Erro: `@prisma/client did not initialize yet`**
+Se a API falhar com este erro, significa que o cliente do Prisma precisa ser regerado.
+- No Docker: Reinicie o container (`make dev` faz isso automaticamente).
+- No Windows: Rode `bun run --filter @auction/api prisma:generate`.
 
-- `apps/web/.env.development`
-- `apps/web/.env.staging`
-
-Exemplo (`apps/web/.env.development`):
-
-```env
-VITE_APP_NAME=Auction Platform (development)
-VITE_API_BASE_URL=http://localhost:3333
-```
-
-Exemplo (`apps/web/.env.staging`):
-
-```env
-VITE_APP_NAME=Auction Platform (staging)
-VITE_API_BASE_URL=http://localhost:3334
-```
-
-### Setup local no Windows (frontend)
-
-1. Instale dependências:
-
-```powershell
-bun install
-```
-
-2. Suba backend e frontend em local:
-
-```powershell
-bun run dev
-```
-
-3. Ou rode só frontend/backend por ambiente:
-
-```powershell
-bun run dev:web:staging
-bun run dev:api:staging
-```
-
-4. Ou use scripts PowerShell dedicados:
-
-```powershell
-bun run ps:web:dev
-bun run ps:web:staging
-bun run ps:api:dev
-bun run ps:api:staging
-```
-
-## Backend: healthcheck, logs estruturados e flags
-
-- `GET /health` retorna `status`, `appEnv`, `nodeEnv`, `uptimeInSeconds` e `timestamp`.
-- Logs estruturados em JSON via logger nativo do Fastify.
-- Flags de ambiente aplicadas na API: `NODE_ENV` e `APP_ENV`.
-
-## Troubleshooting (Prisma Client)
-
-Se ao subir a API aparecer `@prisma/client did not initialize yet`, gere o client e tente novamente:
-
-```powershell
-bun run --filter @auction/api prisma:generate
-bun run --filter @auction/api dev
-```
-
-Os scripts `dev`/`dev:staging` da API já executam `prisma:generate` automaticamente para evitar recorrência.
-
-## Qualidade e governança
-
-- ESLint + Prettier compartilhados
-- Husky + lint-staged
-- Commitlint (Conventional Commits)
-
-Consulte também: `infra/README.md`.
+**Erro: Porta já está em uso**
+Certifique-se de que não há outros serviços rodando nas portas 3333, 5173 ou 5432.
+- Linux: `sudo lsof -i :3333`
+- Windows: `netstat -ano | findstr :3333`

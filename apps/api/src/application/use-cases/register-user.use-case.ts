@@ -1,7 +1,7 @@
-import { AppError } from "@/application/errors/app-error";
-import type { PasswordHasher } from "@/application/services/password-hasher";
-import type { User } from "@/domain/entities/user";
-import type { UserRepository } from "@/domain/repositories/user-repository";
+import { AppError } from "#application/errors/app-error";
+import type { PasswordHasher } from "#application/services/password-hasher";
+import type { User } from "#domain/entities/user";
+import type { UserRepository } from "#domain/repositories/user-repository";
 
 interface RegisterUserInput {
   name: string;
@@ -13,7 +13,7 @@ export class RegisterUserUseCase {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly passwordHasher: PasswordHasher
-  ) {}
+  ) { }
 
   async execute(input: RegisterUserInput): Promise<User> {
     const existingUser = await this.userRepository.findByEmail(input.email);
