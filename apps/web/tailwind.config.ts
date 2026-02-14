@@ -1,6 +1,6 @@
 import type { Config } from "tailwindcss";
- 
-const preset = require("@auction/config/tailwind/preset");
+
+import preset from "@auction/config/tailwind/preset";
 
 export default {
   presets: [preset],

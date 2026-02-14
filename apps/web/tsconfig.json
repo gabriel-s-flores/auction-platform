@@ -8,5 +8,5 @@
       "@ui/*": ["../../packages/ui/src/*"]
     }
   },
-  "include": ["src", "vite.config.ts", "src/vite-env.d.ts"]
+  "include": ["src", "vite.config.ts", "tailwind.config.ts", "src/vite-env.d.ts"]
 }
