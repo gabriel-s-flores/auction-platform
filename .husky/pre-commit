@@ -1,0 +1,5 @@
+if find . -type f \( -name "*.test.*" -o -name "*.spec.*" -o -name "*_test_*" -o -name "*_spec_*" \) -not -path "./node_modules/*" | grep -q .; then
+  bun test
+else
+  echo "No test files found, skipping bun test."
+fi

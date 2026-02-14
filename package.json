@@ -1,0 +1,76 @@
+{
+  "name": "auction-platform",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "bun@1.1.45",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "setup": "powershell -ExecutionPolicy Bypass -File ./infra/setup.ps1",
+    "db:setup": "powershell -ExecutionPolicy Bypass -File ./infra/db-setup.ps1 -Environment development",
+    "db:setup:staging": "powershell -ExecutionPolicy Bypass -File ./infra/db-setup.ps1 -Environment staging",
+    "db:migrate": "powershell -ExecutionPolicy Bypass -File ./infra/migrate.ps1 -Environment development",
+    "db:migrate:staging": "powershell -ExecutionPolicy Bypass -File ./infra/migrate.ps1 -Environment staging",
+    "dev": "powershell -ExecutionPolicy Bypass -File ./infra/dev.ps1 -Environment development",
+    "staging": "powershell -ExecutionPolicy Bypass -File ./infra/dev.ps1 -Environment staging",
+    "ps:web:dev": "powershell -ExecutionPolicy Bypass -File ./infra/run-web.ps1 -Environment development",
+    "ps:web:staging": "powershell -ExecutionPolicy Bypass -File ./infra/run-web.ps1 -Environment staging",
+    "ps:api:dev": "powershell -ExecutionPolicy Bypass -File ./infra/run-api.ps1 -Environment development",
+    "ps:api:staging": "powershell -ExecutionPolicy Bypass -File ./infra/run-api.ps1 -Environment staging",
+    "check-env": "powershell -ExecutionPolicy Bypass -File ./infra/check-env.ps1",
+    "dev:web": "bun run --filter @auction/web dev",
+    "dev:web:staging": "bun run --filter @auction/web dev:staging",
+    "dev:api": "bun run --filter @auction/api dev",
+    "dev:api:staging": "bun run --filter @auction/api dev:staging",
+    "db:migrate:api:development": "bun run --filter @auction/api prisma:migrate:deploy:development",
+    "db:migrate:api:staging": "bun run --filter @auction/api prisma:migrate:deploy:staging",
+    "lint": "bun run lint:web && bun run lint:api && bun run lint:ui && bun run lint:shared-types",
+    "lint:web": "bun run --filter @auction/web lint",
+    "lint:api": "bun run --filter @auction/api lint",
+    "lint:ui": "bun run --filter @auction/ui lint",
+    "lint:shared-types": "bun run --filter @auction/shared-types lint",
+    "typecheck": "bun run typecheck:web && bun run typecheck:api && bun run typecheck:ui && bun run typecheck:shared-types",
+    "typecheck:web": "bun run --filter @auction/web typecheck",
+    "typecheck:api": "bun run --filter @auction/api typecheck",
+    "typecheck:ui": "bun run --filter @auction/ui typecheck",
+    "typecheck:shared-types": "bun run --filter @auction/shared-types typecheck",
+    "format": "bunx prettier --write .",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,mjs,cjs}": [
+      "bunx eslint --max-warnings=0 --fix",
+      "bunx prettier --write"
+    ],
+    "*.{json,md,css,html,yml,yaml}": [
+      "bunx prettier --write"
+    ]
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.20.0",
+    "@commitlint/cli": "^19.7.1",
+    "@commitlint/config-conventional": "^19.7.1",
+    "@types/node": "^22.13.1",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "bun-types": "^1.1.45",
+    "@typescript-eslint/eslint-plugin": "^8.24.1",
+    "@typescript-eslint/parser": "^8.24.1",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.20.1",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.3",
+    "postcss": "^8.5.3",
+    "prettier": "^3.5.1",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.3",
+    "globals": "^15.15.0"
+  }
+}

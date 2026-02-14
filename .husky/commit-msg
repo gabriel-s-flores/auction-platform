@@ -1,0 +1,1 @@
+powershell -ExecutionPolicy Bypass -Command "param([string]$messageFile) bunx commitlint --edit $messageFile" "$1"

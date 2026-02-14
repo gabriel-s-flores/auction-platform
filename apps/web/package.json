@@ -1,0 +1,30 @@
+{
+  "name": "@auction/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --mode development",
+    "dev:staging": "vite --mode staging",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "bunx eslint .",
+    "typecheck": "bunx tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@auction/shared-types": "workspace:*",
+    "@auction/ui": "workspace:*",
+    "@tanstack/react-query": "^5.66.0",
+    "axios": "^1.7.9",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.1"
+  },
+  "devDependencies": {
+    "@auction/config": "workspace:*",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^5.4.14"
+  }
+}
