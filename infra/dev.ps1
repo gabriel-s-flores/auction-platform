@@ -13,5 +13,5 @@ $webScript = if ($Environment -eq "staging") { "dev:web:staging" } else { "dev:w
 Write-Host "[dev] Subindo API ($apiScript) em nova janela..." -ForegroundColor Yellow
 Start-Process powershell -ArgumentList "-NoExit", "-ExecutionPolicy", "Bypass", "-Command", "bun run $apiScript"
 
-Write-Host "[dev] Subindo Web ($webScript) nesta janela..." -ForegroundColor Yellow
-bun run $webScript
+Write-Host "[dev] Subindo Web ($webScript) em nova janela..." -ForegroundColor Yellow
+Start-Process powershell -ArgumentList "-NoExit", "-ExecutionPolicy", "Bypass", "-Command", "bun run $webScript"

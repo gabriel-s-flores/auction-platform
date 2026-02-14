@@ -2,9 +2,8 @@
   "extends": "../config/tsconfig/node.json",
   "compilerOptions": {
     "rootDir": "src",
-    "baseUrl": ".",
     "paths": {
-      "@auction/shared-types/*": ["src/*"]
+      "@auction/shared-types/*": ["./src/*"]
     }
   },
   "include": ["src"]

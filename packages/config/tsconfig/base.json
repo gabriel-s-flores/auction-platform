@@ -15,12 +15,11 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "baseUrl": "../..",
     "paths": {
-      "@web/*": ["apps/web/src/*"],
-      "@api/*": ["apps/api/src/*"],
-      "@ui/*": ["packages/ui/src/*"],
-      "@config/*": ["packages/config/*"]
+      "@web/*": ["../../../apps/web/src/*"],
+      "@api/*": ["../../../apps/api/src/*"],
+      "@ui/*": ["../../../packages/ui/src/*"],
+      "@config/*": ["../../../packages/config/*"]
     }
   }
 }

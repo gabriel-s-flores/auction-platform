@@ -45,5 +45,5 @@ O `check-env.ps1` valida esses arquivos para o app web.
 
 ## Observações
 
-- O script `dev.ps1` abre a API em uma nova janela PowerShell e mantém o frontend na janela atual.
+- O script `dev.ps1` abre API e frontend em janelas PowerShell separadas.
 - Todos os fluxos foram desenhados para Windows, sem bash/sh/make, Docker ou docker-compose.

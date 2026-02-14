@@ -2,10 +2,9 @@
   "extends": "../../packages/config/tsconfig/react.json",
   "compilerOptions": {
     "types": ["vite/client", "node"],
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@web/*": ["src/*"],
+      "@/*": ["./src/*"],
+      "@web/*": ["./src/*"],
       "@ui/*": ["../../packages/ui/src/*"]
     }
   },
