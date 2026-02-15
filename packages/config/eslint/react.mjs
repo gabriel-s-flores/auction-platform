@@ -13,28 +13,28 @@ export default [
     files: ["**/*.{tsx,jsx}"],
     languageOptions: {
       globals: {
-        ...globals.browser
+        ...globals.browser,
       },
       parserOptions: {
         ecmaFeatures: {
-          jsx: true
-        }
-      }
+          jsx: true,
+        },
+      },
     },
     plugins: {
       react: reactPlugin,
       "react-hooks": reactHooksPlugin,
       "jsx-a11y": jsxA11yPlugin,
-      "tailwindcss": tailwindPlugin,
-      "@tanstack/query": queryPlugin
+      tailwindcss: tailwindPlugin,
+      "@tanstack/query": queryPlugin,
     },
     settings: {
       react: {
-        version: "detect"
+        version: "detect",
       },
       tailwindcss: {
-        callees: ["clsx", "cva", "cn"]
-      }
+        callees: ["clsx", "cva", "cn"],
+      },
     },
     rules: {
       ...reactPlugin.configs.recommended.rules,
@@ -43,7 +43,8 @@ export default [
       ...queryPlugin.configs["flat/recommended"][0].rules,
       "react/react-in-jsx-scope": "off",
       "react-hooks/rules-of-hooks": "error",
-      "react-hooks/exhaustive-deps": "error"
-    }
-  }
+      "react-hooks/exhaustive-deps": "error",
+      "sonarjs/prefer-read-only-props": "off",
+    },
+  },
 ];

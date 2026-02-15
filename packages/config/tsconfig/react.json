@@ -8,6 +8,6 @@
     "composite": true,
     "declaration": true,
     "declarationMap": true,
-    "noEmit": true
+    "noEmit": false
   }
 }

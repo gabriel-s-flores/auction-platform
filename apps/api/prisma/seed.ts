@@ -13,8 +13,8 @@ async function main() {
       name: "Admin",
       email: "admin@auction.local",
       passwordHash: adminPasswordHash,
-      role: "ADMIN"
-    }
+      role: "ADMIN",
+    },
   });
 
   await prisma.user.upsert({
@@ -24,8 +24,8 @@ async function main() {
       name: "User",
       email: "user@auction.local",
       passwordHash: userPasswordHash,
-      role: "USER"
-    }
+      role: "USER",
+    },
   });
 
   await prisma.auction.createMany({
@@ -37,7 +37,7 @@ async function main() {
         highestBid: 450000,
         status: "OPEN",
         endsAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
-        sellerId: admin.id
+        sellerId: admin.id,
       },
       {
         title: "iPhone 15 Pro",
@@ -46,20 +46,20 @@ async function main() {
         highestBid: 300000,
         status: "OPEN",
         endsAt: new Date(Date.now() + 1000 * 60 * 60 * 12),
-        sellerId: admin.id
-      }
+        sellerId: admin.id,
+      },
     ],
-    skipDuplicates: true
+    skipDuplicates: true,
   });
 }
 
-main()
-  .then(async () => {
-    await prisma.$disconnect();
-  })
-  .catch(async (error) => {
-    // eslint-disable-next-line no-console
-    console.error(error);
-    await prisma.$disconnect();
-    process.exit(1);
-  });
+try {
+  await main();
+} catch (error) {
+  // eslint-disable-next-line no-console
+  console.error(error);
+  // eslint-disable-next-line n/no-process-exit
+  process.exit(1);
+} finally {
+  await prisma.$disconnect();
+}

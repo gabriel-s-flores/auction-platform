@@ -1,4 +1,5 @@
 import globals from "globals";
+import pluginN from "eslint-plugin-n";
 
 import baseConfig from "./base.mjs";
 
@@ -9,8 +10,17 @@ export default [
     languageOptions: {
       globals: {
         ...globals.node,
-        Bun: "readonly"
-      }
-    }
-  }
+        Bun: "readonly",
+      },
+    },
+    plugins: {
+      n: pluginN,
+    },
+    rules: {
+      ...pluginN.configs["recommended"].rules,
+      "n/no-missing-import": "off",
+      "n/no-unpublished-import": "off",
+      "n/no-extraneous-import": "off",
+    },
+  },
 ];

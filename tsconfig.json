@@ -1,8 +1,13 @@
 {
-  "files": [],
-  "references": [
-    { "path": "./apps/web" },
-    { "path": "./apps/api" },
-    { "path": "./packages/ui" }
-  ]
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "baseUrl": ".",
+    "paths": {
+      "@auction/config/*": ["packages/config/*"]
+    },
+    "allowJs": true
+  },
+  "files": ["tailwind.config.ts"],
+  "references": [{ "path": "./apps/web" }, { "path": "./apps/api" }, { "path": "./packages/ui" }]
 }
