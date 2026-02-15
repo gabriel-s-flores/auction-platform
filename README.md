@@ -130,6 +130,8 @@ Método tradicional usando PowerShell. Requer instalação local das ferramentas
 
 ---
 
+
+
 ## 🌍 Ambientes e Portas
 
 O projeto suporta ambientes de `development` e `staging` rodando simultaneamente (útil para testar features sem quebrar o dev).
@@ -141,6 +143,35 @@ O projeto suporta ambientes de `development` e `staging` rodando simultaneamente
 | PostgreSQL DB | `auction_dev` | `auction_staging` |
 
 No frontend, as variáveis são carregadas de `.env.development` ou `.env.staging` baseadas no script executado (`dev` vs `dev:staging`).
+
+---
+
+## 🛑 Como parar a aplicação
+
+Para encerrar a execução do servidor e garantir que todos os processos do Bun sejam finalizados:
+
+### Windows (PowerShell)
+
+1. No terminal onde o comando está rodando, pressione **`Ctrl + C`**.
+2. Geralmente isso é suficiente. Caso o processo persista ou o terminal trave, você pode forçar o encerramento de todos os processos do Bun com o comando:
+   ```powershell
+   taskkill /IM bun.exe /F
+   ```
+
+### Linux / WSL
+
+1. Se estiver rodando via **Docker/Make**:
+   ```bash
+   make down
+   ```
+   Isso irá parar e remover os containers corretamente.
+
+2. Se estiver rodando **nativamente** no terminal:
+   - Pressione **`Ctrl + C`**.
+   - Se necessário forçar o encerramento:
+     ```bash
+     pkill -f bun
+     ```
 
 ---
 
