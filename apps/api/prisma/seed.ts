@@ -1,3 +1,4 @@
+// Esse arquivo popula o banco de dados na primeira vez que ele é criado, por isso algumas regras do eslint estão desabilitadas
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
