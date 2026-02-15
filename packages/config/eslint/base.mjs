@@ -2,8 +2,8 @@ import js from "@eslint/js";
 import tseslint from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
 import eslintConfigPrettier from "eslint-config-prettier";
-import simpleImportSort from "eslint-plugin-simple-import-sort";
 import pluginPromise from "eslint-plugin-promise";
+import simpleImportSort from "eslint-plugin-simple-import-sort";
 import pluginSonarjs from "eslint-plugin-sonarjs";
 
 export default [
