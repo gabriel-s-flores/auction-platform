@@ -1,6 +1,5 @@
-import type { Config } from "tailwindcss";
-
 import preset from "@auction/config/tailwind/preset";
+import type { Config } from "tailwindcss";
 
 export default {
   presets: [preset],

@@ -7,6 +7,7 @@ import type {
   PlaceBidRequest,
   PlaceBidResponse
 } from "@auction/shared-types";
+
 import { httpClient } from "@/shared/api/http-client";
 
 async function listOpen(): Promise<AuctionDto[]> {

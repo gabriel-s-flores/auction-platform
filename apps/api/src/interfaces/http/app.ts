@@ -1,7 +1,9 @@
 import cors from "@fastify/cors";
 import jwt from "@fastify/jwt";
 import Fastify from "fastify";
-import { ZodError, z } from "zod";
+import { z,ZodError } from "zod";
+
+import { AppError } from "#application/errors/app-error";
 import { AuthenticateUserUseCase } from "#application/use-cases/authenticate-user.use-case";
 import { CloseAuctionUseCase } from "#application/use-cases/close-auction.use-case";
 import { CreateAuctionUseCase } from "#application/use-cases/create-auction.use-case";
@@ -11,7 +13,6 @@ import { LoginUserUseCase } from "#application/use-cases/login-user.use-case";
 import { PlaceBidUseCase } from "#application/use-cases/place-bid.use-case";
 import { RegisterUserUseCase } from "#application/use-cases/register-user.use-case";
 import { env } from "#infrastructure/config/env";
-import { AppError } from "#application/errors/app-error";
 import { PrismaAuctionRepository } from "#infrastructure/repositories/prisma-auction.repository";
 import { PrismaUserRepository } from "#infrastructure/repositories/prisma-user.repository";
 import { BunPasswordHasher } from "#infrastructure/security/bun-password-hasher";

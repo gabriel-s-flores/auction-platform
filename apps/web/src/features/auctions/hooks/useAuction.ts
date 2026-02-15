@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+
 import { auctionsService } from "@/features/auctions/services/auctions.service";
 
 export function useAuction(auctionId: string) {

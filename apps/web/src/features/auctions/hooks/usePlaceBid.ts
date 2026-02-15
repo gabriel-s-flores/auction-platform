@@ -1,5 +1,6 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { PlaceBidRequest } from "@auction/shared-types";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
 import { auctionsService } from "@/features/auctions/services/auctions.service";
 
 export function usePlaceBid(auctionId: string) {

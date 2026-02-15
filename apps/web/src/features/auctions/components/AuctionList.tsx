@@ -1,6 +1,7 @@
-import { Link } from "react-router-dom";
 import type { AuctionDto } from "@auction/shared-types";
 import { Badge, Button, Card } from "@auction/ui";
+import { Link } from "react-router-dom";
+
 import { useAuctions } from "@/features/auctions/hooks/useAuctions";
 
 export function AuctionList() {
@@ -24,7 +25,7 @@ export function AuctionList() {
         <Card key={auction.id} className="flex items-center justify-between gap-4">
           <div>
             <p className="text-lg font-semibold text-slate-900">{auction.title}</p>
-            <div className="mb-1 mt-1">
+            <div className="my-1">
               <Badge variant={auction.status === "OPEN" ? "success" : "danger"}>{auction.status}</Badge>
             </div>
             <p className="text-sm text-slate-600">Maior lance: R$ {auction.highestBid.toFixed(2)}</p>

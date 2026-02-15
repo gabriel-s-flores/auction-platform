@@ -5,6 +5,7 @@ import type {
   RegisterRequest,
   RegisterResponse
 } from "@auction/shared-types";
+
 import { httpClient } from "@/shared/api/http-client";
 
 async function login(payload: LoginRequest): Promise<LoginPayload> {

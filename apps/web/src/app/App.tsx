@@ -1,7 +1,8 @@
-import { Link, Outlet } from "react-router-dom";
 import { Button } from "@auction/ui";
-import { env } from "@/shared/config/env";
+import { Link, Outlet } from "react-router-dom";
+
 import { useAuth } from "@/shared/auth/auth-context";
+import { env } from "@/shared/config/env";
 
 export function App() {
   const { isAuthenticated, logout } = useAuth();
@@ -9,7 +10,7 @@ export function App() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-4">
+        <div className="mx-auto flex w-full max-w-5xl items-center justify-between p-4">
           <div>
             <h1 className="text-xl font-bold">{env.appName}</h1>
             <p className="text-xs text-slate-500">Ambiente: {env.appEnv}</p>

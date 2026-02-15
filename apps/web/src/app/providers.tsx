@@ -1,5 +1,6 @@
-import type { PropsWithChildren } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { PropsWithChildren } from "react";
+
 import { AuthProvider } from "@/shared/auth/auth-context";
 
 const queryClient = new QueryClient({

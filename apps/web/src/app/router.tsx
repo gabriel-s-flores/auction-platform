@@ -1,7 +1,8 @@
-import { Navigate, RouterProvider, createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter,Navigate, RouterProvider } from "react-router-dom";
+
 import { App } from "@/app/App";
-import { AuctionsPage } from "@/pages/AuctionsPage";
 import { AuctionDetailPage } from "@/pages/AuctionDetailPage";
+import { AuctionsPage } from "@/pages/AuctionsPage";
 import { CreateAuctionPage } from "@/pages/CreateAuctionPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { RegisterPage } from "@/pages/RegisterPage";

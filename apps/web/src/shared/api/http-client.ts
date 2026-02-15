@@ -1,6 +1,7 @@
 import axios, { type InternalAxiosRequestConfig } from "axios";
-import { env } from "@/shared/config/env";
+
 import { getAccessToken } from "@/shared/auth/token-storage";
+import { env } from "@/shared/config/env";
 
 export const httpClient = axios.create({
   baseURL: env.apiBaseUrl

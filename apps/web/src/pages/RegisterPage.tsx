@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
 import { Alert, Button, Card, Input, Label } from "@auction/ui";
+import { type FormEvent,useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+
 import { useRegister } from "@/features/auth/hooks/useRegister";
 import { getErrorMessage } from "@/shared/api/get-error-message";
 

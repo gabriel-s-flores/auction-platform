@@ -1,4 +1,4 @@
-import { Prisma, type AuctionStatus as PrismaAuctionStatus } from "@prisma/client";
+import { type AuctionStatus as PrismaAuctionStatus,Prisma } from "@prisma/client";
 
 import { AppError } from "#application/errors/app-error";
 import type { Auction } from "#domain/entities/auction";
