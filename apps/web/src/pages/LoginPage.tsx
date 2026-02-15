@@ -33,7 +33,7 @@ export function LoginPage() {
           <Alert variant="error">{getErrorMessage(loginMutation.error, "Falha ao autenticar")}</Alert>
         ) : null}
 
-        <form className="space-y-3" onSubmit={handleSubmit}>
+        <form className="space-y-3" onSubmit={(e) => void handleSubmit(e)}>
           <div>
             <Label htmlFor="login-email">E-mail</Label>
             <Input

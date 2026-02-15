@@ -35,7 +35,7 @@ export function RegisterPage() {
           <Alert variant="success">Cadastro concluído com sucesso! Agora faça login.</Alert>
         ) : null}
 
-        <form className="space-y-3" onSubmit={handleSubmit}>
+        <form className="space-y-3" onSubmit={(e) => void handleSubmit(e)}>
           <div>
             <Label htmlFor="register-name">Nome</Label>
             <Input

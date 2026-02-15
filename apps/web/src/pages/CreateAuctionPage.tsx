@@ -38,7 +38,7 @@ export function CreateAuctionPage() {
           <Alert variant="error">{getErrorMessage(createAuctionMutation.error, "Falha ao criar leilão")}</Alert>
         ) : null}
 
-        <form className="space-y-3" onSubmit={handleSubmit}>
+        <form className="space-y-3" onSubmit={(e) => void handleSubmit(e)}>
           <div>
             <Label htmlFor="auction-title">Título</Label>
             <Input

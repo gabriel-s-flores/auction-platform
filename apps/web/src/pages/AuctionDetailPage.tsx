@@ -92,7 +92,7 @@ export function AuctionDetailPage() {
 
           {placeBidMutation.isSuccess ? <Alert variant="success">Lance enviado com sucesso!</Alert> : null}
 
-          <form className="space-y-3" onSubmit={handlePlaceBid}>
+          <form className="space-y-3" onSubmit={(e) => void handlePlaceBid(e)}>
             <div>
               <Label htmlFor="bid-amount">Valor do lance</Label>
               <Input
@@ -115,7 +115,7 @@ export function AuctionDetailPage() {
           <Button
             className="w-full"
             disabled={closeAuctionMutation.isPending || auction.status !== "OPEN"}
-            onClick={handleCloseAuction}
+            onClick={() => void handleCloseAuction()}
             type="button"
             variant="secondary"
           >

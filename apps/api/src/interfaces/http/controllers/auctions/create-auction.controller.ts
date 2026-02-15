@@ -1,7 +1,4 @@
-import { CreateAuctionUseCase } from "#application/use-cases/create-auction.use-case";
-import { PrismaAuctionRepository } from "#infrastructure/repositories/prisma-auction.repository";
-import type { AuthenticatedUser } from "#interfaces/http/types/authenticated-user";
-import { AppError } from "#application/errors/app-error";
+import type { CreateAuctionUseCase } from "#application/use-cases/create-auction.use-case";
 
 export class CreateAuctionController {
   constructor(private readonly useCase: CreateAuctionUseCase) { }

@@ -1,7 +1,4 @@
-import { RegisterUserUseCase } from "#application/use-cases/register-user.use-case";
-import { BunPasswordHasher } from "#infrastructure/security/bun-password-hasher";
-import { PrismaUserRepository } from "#infrastructure/repositories/prisma-user.repository";
-import { AppError } from "#application/errors/app-error";
+import type { RegisterUserUseCase } from "#application/use-cases/register-user.use-case";
 
 export class RegisterController {
   constructor(private readonly useCase: RegisterUserUseCase) { }

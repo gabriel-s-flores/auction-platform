@@ -14,7 +14,11 @@ export default [
       parser: tsParser,
       parserOptions: {
         ecmaVersion: "latest",
-        sourceType: "module"
+        sourceType: "module",
+        projectService: {
+          allowDefaultProject: ["*.mjs", "*.js", "*.cjs", "packages/config/eslint/*.mjs", "apps/api/eslint.config.mjs", "apps/api/prisma/seed.ts", "apps/web/*.cjs", "prisma/seed.ts"],
+          defaultProject: "tsconfig.json"
+        },
       }
     },
     plugins: {
@@ -22,13 +26,17 @@ export default [
     },
     rules: {
       "no-unused-vars": "off",
-      "no-console": ["warn", { allow: ["warn", "error"] }],
+      "no-console": "error",
+      "eqeqeq": ["error", "always"],
       "@typescript-eslint/no-explicit-any": "error",
-      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": "error",
       "@typescript-eslint/consistent-type-imports": [
         "error",
         { prefer: "type-imports", fixStyle: "inline-type-imports" }
-      ]
+      ],
+      "@typescript-eslint/no-floating-promises": "error",
+      "@typescript-eslint/await-thenable": "error",
+      "@typescript-eslint/no-misused-promises": "error"
     }
   },
   eslintConfigPrettier
