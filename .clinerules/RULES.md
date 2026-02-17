@@ -79,6 +79,12 @@ Regra: evitar dependências cruzadas desnecessárias entre features.
 4. Evitar comentários óbvios; preferir código autoexplicativo.
 5. Não duplicar regras de negócio (extrair para camada correta).
 
+Regras de Linting (estritas):
+
+- **Imports**: Organizados automaticamente (`simple-import-sort`) e remover não utilizados.
+- **Tipos**: Usar `import type` para importações de tipos (facilita tree-shaking).
+- **Promises**: Sempre aguardar promises (`await`) ou retornar; proibido "floating promises".
+
 Convenções:
 
 - Use cases: `*.use-case.ts`
@@ -140,6 +146,12 @@ Também é obrigatório:
 - respeitar ESLint + Prettier + EditorConfig do repositório;
 - manter commits no padrão Conventional Commits (commitlint);
 - manter PR pequeno, com objetivo claro e descrição técnica.
+
+Restrições técnicas (CI/CD):
+
+- `no-console`: Logs de produção devem usar logger estruturado, não `console.log`.
+- `react-hooks/exhaustive-deps`: Dependências de hooks devem ser exaustivas.
+- `tailwindcss`: Classes utilitárias devem ser válidas e ordenadas (prettier-plugin-tailwindcss).
 
 ## 10) Regras de ambiente e operação local
 

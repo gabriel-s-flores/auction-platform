@@ -22,8 +22,17 @@ setup:
 	docker compose down
 	@echo "Setup complete. Run 'make dev' to start."
 
+
+# Start development environment
 dev:
 	docker compose up
+
+# Rebuild containers and force refresh of anonymous volumes (node_modules)
+# Use this when dependencies change (e.g. package.json updates) or when seeing stale errors
+rebuild:
+	docker compose down
+	docker compose up -d --build --force-recreate -V
+
 
 down:
 	docker compose down

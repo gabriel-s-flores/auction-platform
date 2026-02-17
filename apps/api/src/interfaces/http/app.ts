@@ -1,7 +1,8 @@
+/* eslint-disable sonarjs/deprecation */
 import cors from "@fastify/cors";
 import jwt from "@fastify/jwt";
 import Fastify from "fastify";
-import { z,ZodError } from "zod";
+import { z, ZodError } from "zod";
 
 import { AppError } from "#application/errors/app-error";
 import { AuthenticateUserUseCase } from "#application/use-cases/authenticate-user.use-case";
@@ -27,28 +28,28 @@ import { PlaceBidController } from "#interfaces/http/controllers/bids/place-bid.
 
 const registerSchema = z.object({
   name: z.string().min(2),
-  email: z.string().email(),
-  password: z.string().min(8)
+  email: z.string().email({}),
+  password: z.string().min(8),
 });
 
 const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1)
+  email: z.string().email({}),
+  password: z.string().min(1),
 });
 
 const createAuctionSchema = z.object({
   title: z.string().min(3),
   description: z.string().nullable().optional().default(null),
   startingPrice: z.number().int().positive(),
-  endsAt: z.string().datetime()
+  endsAt: z.string().datetime({}),
 });
 
 const auctionIdSchema = z.object({
-  auctionId: z.string().uuid()
+  auctionId: z.string().uuid({}),
 });
 
 const placeBidSchema = z.object({
-  amount: z.number().int().positive()
+  amount: z.number().int().positive(),
 });
 
 export function buildApp() {
@@ -58,9 +59,9 @@ export function buildApp() {
       base: {
         service: "auction-api",
         appEnv: env.APP_ENV,
-        nodeEnv: env.NODE_ENV
-      }
-    }
+        nodeEnv: env.NODE_ENV,
+      },
+    },
   });
 
   app.setErrorHandler((error, _request, reply) => {
@@ -78,38 +79,38 @@ export function buildApp() {
   app.register(cors, {
     origin: env.CORS_ORIGIN,
     methods: ["GET", "POST", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
+    allowedHeaders: ["Content-Type", "Authorization"],
   });
 
   app.register(jwt, {
-    secret: env.JWT_SECRET
+    secret: env.JWT_SECRET,
   });
 
   const userRepository = new PrismaUserRepository();
   const auctionRepository = new PrismaAuctionRepository();
   const passwordHasher = new BunPasswordHasher();
   const tokenService = new FastifyTokenService(async (payload) =>
-    app.jwt.sign(payload, { expiresIn: env.JWT_EXPIRES_IN })
+    app.jwt.sign(payload, { expiresIn: env.JWT_EXPIRES_IN }),
   );
 
   const registerController = new RegisterController(
-    new RegisterUserUseCase(userRepository, passwordHasher)
+    new RegisterUserUseCase(userRepository, passwordHasher),
   );
   const loginController = new LoginController(
-    new LoginUserUseCase(new AuthenticateUserUseCase(userRepository, passwordHasher), tokenService)
+    new LoginUserUseCase(new AuthenticateUserUseCase(userRepository, passwordHasher), tokenService),
   );
 
   const listAuctionsController = new ListOpenAuctionsController(
-    new ListOpenAuctionsUseCase(auctionRepository)
+    new ListOpenAuctionsUseCase(auctionRepository),
   );
   const getAuctionByIdController = new GetAuctionByIdController(
-    new GetAuctionByIdUseCase(auctionRepository)
+    new GetAuctionByIdUseCase(auctionRepository),
   );
   const createAuctionController = new CreateAuctionController(
-    new CreateAuctionUseCase(auctionRepository)
+    new CreateAuctionUseCase(auctionRepository),
   );
   const closeAuctionController = new CloseAuctionController(
-    new CloseAuctionUseCase(auctionRepository)
+    new CloseAuctionUseCase(auctionRepository),
   );
   const placeBidController = new PlaceBidController(new PlaceBidUseCase(auctionRepository));
 
@@ -118,7 +119,7 @@ export function buildApp() {
     appEnv: env.APP_ENV,
     nodeEnv: env.NODE_ENV,
     uptimeInSeconds: Math.floor(process.uptime()),
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   }));
 
   app.post("/auth/register", async (request, reply) => {
@@ -146,7 +147,7 @@ export function buildApp() {
 
     const auction = await createAuctionController.handle({
       ...body,
-      sellerId: request.user.sub
+      sellerId: request.user.sub,
     });
 
     return reply.status(201).send({ data: auction });
@@ -159,7 +160,7 @@ export function buildApp() {
     await closeAuctionController.handle({
       auctionId: params.auctionId,
       userId: request.user.sub,
-      isAdmin: request.user.role === "ADMIN"
+      isAdmin: request.user.role === "ADMIN",
     });
 
     return reply.status(204).send();
@@ -174,7 +175,7 @@ export function buildApp() {
     const result = await placeBidController.handle({
       auctionId: params.auctionId,
       bidderId: request.user.sub,
-      amount: body.amount
+      amount: body.amount,
     });
 
     return reply.status(201).send({ data: result });

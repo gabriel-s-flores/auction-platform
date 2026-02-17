@@ -30,7 +30,7 @@ export default [
     },
     settings: {
       react: {
-        version: "detect",
+        version: "18.3.1",
       },
       tailwindcss: {
         callees: ["clsx", "cva", "cn"],

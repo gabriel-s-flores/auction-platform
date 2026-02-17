@@ -25,15 +25,15 @@
     "db:seed:staging": "bun --env-file=.env.staging prisma/seed.ts"
   },
   "dependencies": {
-    "@fastify/cors": "^10.0.2",
+    "@fastify/cors": "^10.1.0",
     "@fastify/jwt": "^9.1.0",
-    "@prisma/client": "^6.4.1",
-    "fastify": "^5.2.1",
-    "zod": "^3.24.2"
+    "@prisma/client": "6",
+    "fastify": "^5.7.4",
+    "zod": "4.3.6"
   },
   "devDependencies": {
     "@auction/config": "workspace:*",
-    "prisma": "^6.4.1"
+    "prisma": "6"
   },
   "prisma": {
     "seed": "bun run prisma/seed.ts"

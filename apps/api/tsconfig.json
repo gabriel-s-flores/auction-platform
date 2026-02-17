@@ -2,15 +2,9 @@
   "extends": "../../packages/config/tsconfig/node.json",
   "compilerOptions": {
     "paths": {
-      "#*": [
-        "./src/*"
-      ],
-      "@api/*": [
-        "./src/*"
-      ]
+      "#*": ["./src/*"],
+      "@api/*": ["./src/*"]
     }
   },
-  "include": [
-    "src"
-  ]
+  "include": ["src"]
 }
