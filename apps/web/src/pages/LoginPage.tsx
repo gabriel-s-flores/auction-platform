@@ -52,6 +52,7 @@ export function LoginPage() {
           <div>
             <Label htmlFor="login-password">Senha</Label>
             <Input
+              autoComplete="current-password"
               id="login-password"
               onChange={(event) => setPassword(event.target.value)}
               required

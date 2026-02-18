@@ -67,6 +67,7 @@ export function RegisterPage() {
           <div>
             <Label htmlFor="register-password">Senha</Label>
             <Input
+              autoComplete="new-password"
               id="register-password"
               minLength={8}
               onChange={(event) => setPassword(event.target.value)}
