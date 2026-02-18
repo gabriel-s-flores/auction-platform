@@ -1,4 +1,4 @@
-// Esse arquivo popula o banco de dados na primeira vez que ele é criado, por isso algumas regras do eslint estão desabilitadas
+// This file populates the database on the first run, which is why some eslint rules are disabled
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import pg from "pg";

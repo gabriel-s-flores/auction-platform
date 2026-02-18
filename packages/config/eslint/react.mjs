@@ -2,7 +2,6 @@ import queryPlugin from "@tanstack/eslint-plugin-query";
 import jsxA11yPlugin from "eslint-plugin-jsx-a11y";
 import reactPlugin from "eslint-plugin-react";
 import reactHooksPlugin from "eslint-plugin-react-hooks";
-import tailwindPlugin from "eslint-plugin-tailwindcss";
 import globals from "globals";
 
 import baseConfig from "./base.mjs";
@@ -26,17 +25,10 @@ export default [
     plugins: {
       "react-hooks": reactHooksPlugin,
       "jsx-a11y": jsxA11yPlugin,
-      tailwindcss: tailwindPlugin,
       "@tanstack/query": queryPlugin,
     },
     rules: {
       ...jsxA11yPlugin.configs.recommended.rules,
-      ...tailwindPlugin.configs.recommended.rules,
-      "tailwindcss/classnames-order": "off", //broken with this version of the eslint plugin.
-      "tailwindcss/no-custom-classname": "off",
-      "tailwindcss/enforces-shorthand": "warn",
-      "tailwindcss/enforces-negative-arbitrary-values": "off",
-      "tailwindcss/no-contradicting-classname": "warn",
       ...queryPlugin.configs["flat/recommended"][0].rules,
       "react/react-in-jsx-scope": "off",
       "react/display-name": "off",
@@ -49,9 +41,6 @@ export default [
     settings: {
       react: {
         version: "19.0.0",
-      },
-      tailwindcss: {
-        callees: ["clsx", "cva", "cn"],
       },
     },
   },

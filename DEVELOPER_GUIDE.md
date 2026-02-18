@@ -68,7 +68,6 @@ These rules are explicitly set to **ERROR** or enabled via recommended sets, req
 | **`react-hooks/rules-of-hooks`**         | 🔴 Error | Enforces Hook rules (top-level only, etc.).              |
 | **`react-hooks/exhaustive-deps`**        | 🔴 Error | Checks dependency arrays in `useEffect`, `useMemo`, etc. |
 | **`plugin:jsx-a11y/recommended`**        | 🔴/🟡    | Accessibility rules (aria-labels, alt text).             |
-| **`plugin:tailwindcss/recommended`**     | 🔴/🟡    | Class validation, ordering, and conflict detection.      |
 | **`plugin:@tanstack/query/recommended`** | 🔴/🟡    | React Query best practices.                              |
 
 ### 🔓 Disabled or Relaxed Rules
@@ -94,6 +93,7 @@ These rules have been explicitly turned **OFF** to reduce noise or because they 
 | Rule                                 | Reason                                                                        |
 | :----------------------------------- | :---------------------------------------------------------------------------- |
 | **`react/react-in-jsx-scope`**       | **Obsolete**. React 17+ (and Vite) doesn't require `import React`.            |
+| **`react/display-name`**             | **Relaxed**. Component definitions are usually sufficient for debugging.      |
 | **`sonarjs/prefer-read-only-props`** | **Too Strict**. Often conflicts with standard React pattern of passing props. |
 
 ### 💡 Summary of Policy

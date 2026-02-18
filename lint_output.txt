@@ -1,0 +1,26 @@
+@auction/ui lint: 
+@auction/ui lint: Oops! Something went wrong! :(
+@auction/ui lint: 
+@auction/ui lint: ESLint: 10.0.0
+@auction/ui lint: 
+@auction/ui lint: TypeError: context.getSourceCode is not a function. (In 'context.getSourceCode()', 'context.getSourceCode' is undefined)
+@auction/ui lint: Occurred while linting /home/gabriel/auction-platform/packages/ui/src/components/Badge.tsx:19
+@auction/ui lint: Rule: "tailwindcss/enforces-shorthand"
+@auction/ui lint:     at parseForShorthandCandidates (/home/gabriel/auction-platform/node_modules/.bun/eslint-plugin-tailwindcss@4.0.0-beta.0+9858a45518104434/node_modules/eslint-plugin-tailwindcss/lib/rules/enforces-shorthand.js:231:33)
+@auction/ui lint:     at <anonymous> (/home/gabriel/auction-platform/node_modules/.bun/eslint-plugin-tailwindcss@4.0.0-beta.0+9858a45518104434/node_modules/eslint-plugin-tailwindcss/lib/rules/enforces-shorthand.js:188:15)
+@auction/ui lint:     at forEach (native:1:11)
+@auction/ui lint:     at parseForShorthandCandidates (/home/gabriel/auction-platform/node_modules/.bun/eslint-plugin-tailwindcss@4.0.0-beta.0+9858a45518104434/node_modules/eslint-plugin-tailwindcss/lib/rules/enforces-shorthand.js:187:24)
+@auction/ui lint:     at attributeVisitor (/home/gabriel/auction-platform/node_modules/.bun/eslint-plugin-tailwindcss@4.0.0-beta.0+9858a45518104434/node_modules/eslint-plugin-tailwindcss/lib/rules/enforces-shorthand.js:518:9)
+@auction/ui lint:     at ruleErrorHandler (/home/gabriel/auction-platform/node_modules/.bun/eslint@10.0.0+30b8f6d04eb0cacd/node_modules/eslint/lib/linter/linter.js:645:33)
+@auction/ui lint:     at forEach (native:1:11)
+@auction/ui lint:     at callSync (/home/gabriel/auction-platform/node_modules/.bun/eslint@10.0.0+30b8f6d04eb0cacd/node_modules/eslint/lib/linter/source-code-visitor.js:76:30)
+@auction/ui lint:     at <anonymous> (/home/gabriel/auction-platform/node_modules/.bun/eslint@10.0.0+30b8f6d04eb0cacd/node_modules/eslint/lib/linter/source-code-traverser.js:291:18)
+@auction/ui lint:     at forEach (native:1:11)
+@auction/ui lint:     at traverseSync (/home/gabriel/auction-platform/node_modules/.bun/eslint@10.0.0+30b8f6d04eb0cacd/node_modules/eslint/lib/linter/source-code-traverser.js:290:10)
+@auction/ui lint:     at runRules (/home/gabriel/auction-platform/node_modules/.bun/eslint@10.0.0+30b8f6d04eb0cacd/node_modules/eslint/lib/linter/linter.js:686:12)
+@auction/ui lint:     at #flatVerifyWithoutProcessors (/home/gabriel/auction-platform/node_modules/.bun/eslint@10.0.0+30b8f6d04eb0cacd/node_modules/eslint/lib/linter/linter.js:1248:4)
+@auction/ui lint:     at verify (/home/gabriel/auction-platform/node_modules/.bun/eslint@10.0.0+30b8f6d04eb0cacd/node_modules/eslint/lib/linter/linter.js:861:9)
+@auction/ui lint:     at verifyAndFix (/home/gabriel/auction-platform/node_modules/.bun/eslint@10.0.0+30b8f6d04eb0cacd/node_modules/eslint/lib/linter/linter.js:1518:20)
+@auction/ui lint:     at verifyText (/home/gabriel/auction-platform/node_modules/.bun/eslint@10.0.0+30b8f6d04eb0cacd/node_modules/eslint/lib/eslint/eslint-helpers.js:1179:45)
+@auction/ui lint:     at processTicksAndRejections (native:7:39)
+@auction/ui lint: Exited with code 2
