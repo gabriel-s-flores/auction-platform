@@ -1,5 +1,6 @@
 import { Alert, Badge, Button, Card, Input, Label } from "@auction/ui";
-import { type FormEvent,useMemo, useState } from "react";
+import type React from "react";
+import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { useAuction } from "@/features/auctions/hooks/useAuction";
@@ -34,7 +35,7 @@ export function AuctionDetailPage() {
     return auctionQuery.data.highestBid + 1;
   }, [auctionQuery.data]);
 
-  async function handlePlaceBid(event: FormEvent<HTMLFormElement>) {
+  async function handlePlaceBid(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     await placeBidMutation.mutateAsync({ amount: Number(bidAmount) });
@@ -52,7 +53,8 @@ export function AuctionDetailPage() {
   if (auctionQuery.isError || !auctionQuery.data) {
     return (
       <Alert variant="error">
-        {getErrorMessage(auctionQuery.error, "Não foi possível carregar o leilão")} <Link to="/auctions">Voltar</Link>
+        {getErrorMessage(auctionQuery.error, "Não foi possível carregar o leilão")}{" "}
+        <Link to="/auctions">Voltar</Link>
       </Alert>
     );
   }
@@ -75,7 +77,8 @@ export function AuctionDetailPage() {
 
         <div className="grid gap-2 text-sm text-slate-700">
           <p>
-            <span className="font-semibold">Lance inicial:</span> {formatCurrency(auction.startingPrice)}
+            <span className="font-semibold">Lance inicial:</span>{" "}
+            {formatCurrency(auction.startingPrice)}
           </p>
           <p>
             <span className="font-semibold">Maior lance:</span> {formatCurrency(auction.highestBid)}
@@ -88,10 +91,14 @@ export function AuctionDetailPage() {
           <h3 className="text-lg font-semibold text-slate-900">Enviar lance</h3>
 
           {placeBidMutation.isError ? (
-            <Alert variant="error">{getErrorMessage(placeBidMutation.error, "Falha ao enviar lance")}</Alert>
+            <Alert variant="error">
+              {getErrorMessage(placeBidMutation.error, "Falha ao enviar lance")}
+            </Alert>
           ) : null}
 
-          {placeBidMutation.isSuccess ? <Alert variant="success">Lance enviado com sucesso!</Alert> : null}
+          {placeBidMutation.isSuccess ? (
+            <Alert variant="success">Lance enviado com sucesso!</Alert>
+          ) : null}
 
           <form className="space-y-3" onSubmit={(e) => void handlePlaceBid(e)}>
             <div>
@@ -105,10 +112,16 @@ export function AuctionDetailPage() {
                 type="number"
                 value={bidAmount}
               />
-              <p className="mt-1 text-xs text-slate-500">Mínimo permitido: {formatCurrency(minBid)}</p>
+              <p className="mt-1 text-xs text-slate-500">
+                Mínimo permitido: {formatCurrency(minBid)}
+              </p>
             </div>
 
-            <Button className="w-full" disabled={placeBidMutation.isPending || auction.status !== "OPEN"} type="submit">
+            <Button
+              className="w-full"
+              disabled={placeBidMutation.isPending || auction.status !== "OPEN"}
+              type="submit"
+            >
               {placeBidMutation.isPending ? "Enviando..." : "Dar lance"}
             </Button>
           </form>
@@ -124,12 +137,18 @@ export function AuctionDetailPage() {
           </Button>
 
           {closeAuctionMutation.isError ? (
-            <Alert variant="error">{getErrorMessage(closeAuctionMutation.error, "Falha ao encerrar leilão")}</Alert>
+            <Alert variant="error">
+              {getErrorMessage(closeAuctionMutation.error, "Falha ao encerrar leilão")}
+            </Alert>
           ) : null}
         </Card>
       ) : (
         <Alert variant="info">
-          Faça <Link className="font-semibold underline" to="/login">login</Link> para enviar lances e gerenciar leilões.
+          Faça{" "}
+          <Link className="font-semibold underline" to="/login">
+            login
+          </Link>{" "}
+          para enviar lances e gerenciar leilões.
         </Alert>
       )}
     </div>

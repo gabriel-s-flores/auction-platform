@@ -1,5 +1,6 @@
 import { Alert, Button, Card, Input, Label } from "@auction/ui";
-import { type FormEvent,useState } from "react";
+import type React from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { useRegister } from "@/features/auth/hooks/useRegister";
@@ -13,11 +14,11 @@ export function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     await registerMutation.mutateAsync({ name, email, password });
-    navigate("/login", { replace: true });
+    void navigate("/login", { replace: true });
   }
 
   return (
@@ -25,11 +26,15 @@ export function RegisterPage() {
       <Card className="space-y-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Cadastro</h2>
-          <p className="text-sm text-slate-600">Crie sua conta para vender e participar de leilões.</p>
+          <p className="text-sm text-slate-600">
+            Crie sua conta para vender e participar de leilões.
+          </p>
         </div>
 
         {registerMutation.isError ? (
-          <Alert variant="error">{getErrorMessage(registerMutation.error, "Falha ao cadastrar")}</Alert>
+          <Alert variant="error">
+            {getErrorMessage(registerMutation.error, "Falha ao cadastrar")}
+          </Alert>
         ) : null}
 
         {registerMutation.isSuccess ? (
@@ -78,7 +83,7 @@ export function RegisterPage() {
 
         <p className="text-sm text-slate-600">
           Já possui conta?{" "}
-          <Link className="font-semibold text-primary-700 hover:underline" to="/login">
+          <Link className="text-primary-700 font-semibold hover:underline" to="/login">
             Entrar
           </Link>
         </p>

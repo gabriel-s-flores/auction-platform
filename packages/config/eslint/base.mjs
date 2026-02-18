@@ -1,40 +1,18 @@
 import js from "@eslint/js";
-import tseslint from "@typescript-eslint/eslint-plugin";
-import tsParser from "@typescript-eslint/parser";
 import eslintConfigPrettier from "eslint-config-prettier";
 import pluginPromise from "eslint-plugin-promise";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
 import pluginSonarjs from "eslint-plugin-sonarjs";
+import tseslint from "typescript-eslint";
 
 export default [
   {
     ignores: ["**/dist/**", "**/build/**", "**/coverage/**", "**/node_modules/**"],
   },
   js.configs.recommended,
+  ...tseslint.configs.recommended,
   {
-    files: ["**/*.{ts,tsx,js,jsx,mjs,cjs}"],
-    languageOptions: {
-      parser: tsParser,
-      parserOptions: {
-        ecmaVersion: "latest",
-        sourceType: "module",
-        projectService: {
-          allowDefaultProject: [
-            "*.mjs",
-            "*.js",
-            "*.cjs",
-            "packages/config/eslint/*.mjs",
-            "apps/api/eslint.config.mjs",
-            "apps/api/prisma/seed.ts",
-            "apps/web/*.cjs",
-            "prisma/seed.ts",
-          ],
-          defaultProject: "tsconfig.json",
-        },
-      },
-    },
     plugins: {
-      "@typescript-eslint": tseslint,
       "simple-import-sort": simpleImportSort,
       promise: pluginPromise,
       sonarjs: pluginSonarjs,
@@ -56,6 +34,28 @@ export default [
       "@typescript-eslint/no-floating-promises": "error",
       "@typescript-eslint/await-thenable": "error",
       "@typescript-eslint/no-misused-promises": "error",
+    },
+  },
+  {
+    files: ["**/*.{ts,tsx,js,jsx,mjs,cjs}"],
+    languageOptions: {
+      parser: tseslint.parser,
+      parserOptions: {
+        projectService: {
+          allowDefaultProject: [
+            "*.mjs",
+            "*.js",
+            "*.cjs",
+            "packages/config/eslint/*.mjs",
+            "apps/api/eslint.config.mjs",
+            "apps/api/prisma/seed.ts",
+            "apps/web/*.cjs",
+            "prisma/seed.ts",
+          ],
+          defaultProject: "tsconfig.json",
+          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 20,
+        },
+      },
     },
   },
   eslintConfigPrettier,

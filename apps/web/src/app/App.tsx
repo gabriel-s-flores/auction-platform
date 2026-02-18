@@ -17,13 +17,13 @@ export function App() {
           </div>
 
           <nav className="flex items-center gap-2">
-            <Link className="text-sm font-medium text-primary-700 hover:underline" to="/auctions">
+            <Link className="text-primary-700 text-sm font-medium hover:underline" to="/auctions">
               Leilões
             </Link>
 
             {isAuthenticated ? (
               <>
-                <Link className="text-sm font-medium text-primary-700 hover:underline" to="/auctions/new">
+                <Link className="text-primary-700 text-sm font-medium hover:underline" to="/auctions/new">
                   Criar leilão
                 </Link>
                 <Button variant="secondary" onClick={logout} type="button">
@@ -32,10 +32,10 @@ export function App() {
               </>
             ) : (
               <>
-                <Link className="text-sm font-medium text-primary-700 hover:underline" to="/login">
+                <Link className="text-primary-700 text-sm font-medium hover:underline" to="/login">
                   Entrar
                 </Link>
-                <Link className="text-sm font-medium text-primary-700 hover:underline" to="/register">
+                <Link className="text-primary-700 text-sm font-medium hover:underline" to="/register">
                   Cadastrar
                 </Link>
               </>

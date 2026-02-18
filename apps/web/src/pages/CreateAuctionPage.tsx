@@ -1,5 +1,6 @@
 import { Alert, Button, Card, Input, Label } from "@auction/ui";
-import { type FormEvent,useState } from "react";
+import type React from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useCreateAuction } from "@/features/auctions/hooks/useCreateAuction";
@@ -14,17 +15,17 @@ export function CreateAuctionPage() {
   const [startingPrice, setStartingPrice] = useState("");
   const [endsAt, setEndsAt] = useState("");
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const auction = await createAuctionMutation.mutateAsync({
       title,
       description: description || null,
       startingPrice: Number(startingPrice),
-      endsAt: new Date(endsAt).toISOString()
+      endsAt: new Date(endsAt).toISOString(),
     });
 
-    navigate(`/auctions/${auction.id}`);
+    void navigate(`/auctions/${auction.id}`);
   }
 
   return (
@@ -36,7 +37,9 @@ export function CreateAuctionPage() {
         </div>
 
         {createAuctionMutation.isError ? (
-          <Alert variant="error">{getErrorMessage(createAuctionMutation.error, "Falha ao criar leilão")}</Alert>
+          <Alert variant="error">
+            {getErrorMessage(createAuctionMutation.error, "Falha ao criar leilão")}
+          </Alert>
         ) : null}
 
         <form className="space-y-3" onSubmit={(e) => void handleSubmit(e)}>

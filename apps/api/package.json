@@ -27,13 +27,16 @@
   "dependencies": {
     "@fastify/cors": "^10.1.0",
     "@fastify/jwt": "^9.1.0",
-    "@prisma/client": "6",
+    "@prisma/adapter-pg": "7.4.0",
+    "@prisma/client": "7.4.0",
     "fastify": "^5.7.4",
+    "pg": "8.18.0",
     "zod": "4.3.6"
   },
   "devDependencies": {
     "@auction/config": "workspace:*",
-    "prisma": "6"
+    "@types/pg": "8.16.0",
+    "prisma": "7.4.0"
   },
   "prisma": {
     "seed": "bun run prisma/seed.ts"

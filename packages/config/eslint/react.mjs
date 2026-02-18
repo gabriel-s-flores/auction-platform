@@ -9,8 +9,10 @@ import baseConfig from "./base.mjs";
 
 export default [
   ...baseConfig,
+  reactPlugin.configs.flat.recommended,
+  reactPlugin.configs.flat["jsx-runtime"],
   {
-    files: ["**/*.{tsx,jsx}"],
+    files: ["**/*.{ts,tsx,js,jsx}"],
     languageOptions: {
       globals: {
         ...globals.browser,
@@ -22,29 +24,35 @@ export default [
       },
     },
     plugins: {
-      react: reactPlugin,
       "react-hooks": reactHooksPlugin,
       "jsx-a11y": jsxA11yPlugin,
       tailwindcss: tailwindPlugin,
       "@tanstack/query": queryPlugin,
     },
+    rules: {
+      ...jsxA11yPlugin.configs.recommended.rules,
+      ...tailwindPlugin.configs.recommended.rules,
+      "tailwindcss/classnames-order": "off", //broken with this version of the eslint plugin.
+      "tailwindcss/no-custom-classname": "off",
+      "tailwindcss/enforces-shorthand": "warn",
+      "tailwindcss/enforces-negative-arbitrary-values": "off",
+      "tailwindcss/no-contradicting-classname": "warn",
+      ...queryPlugin.configs["flat/recommended"][0].rules,
+      "react/react-in-jsx-scope": "off",
+      "react/display-name": "off",
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "error",
+      "sonarjs/prefer-read-only-props": "off",
+    },
+  },
+  {
     settings: {
       react: {
-        version: "18.3.1",
+        version: "19.0.0",
       },
       tailwindcss: {
         callees: ["clsx", "cva", "cn"],
       },
-    },
-    rules: {
-      ...reactPlugin.configs.recommended.rules,
-      ...jsxA11yPlugin.configs.recommended.rules,
-      ...tailwindPlugin.configs.recommended.rules,
-      ...queryPlugin.configs["flat/recommended"][0].rules,
-      "react/react-in-jsx-scope": "off",
-      "react-hooks/rules-of-hooks": "error",
-      "react-hooks/exhaustive-deps": "error",
-      "sonarjs/prefer-read-only-props": "off",
     },
   },
 ];

@@ -6,5 +6,5 @@
       "@api/*": ["./src/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src", "prisma.config.ts"]
 }

@@ -1,5 +1,6 @@
 import { Alert, Button, Card, Input, Label } from "@auction/ui";
-import { type FormEvent,useState } from "react";
+import type React from "react";
+import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { useLogin } from "@/features/auth/hooks/useLogin";
@@ -15,11 +16,11 @@ export function LoginPage() {
 
   const redirectTo = (location.state as { from?: string } | null)?.from ?? "/auctions";
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     await loginMutation.mutateAsync({ email, password });
-    navigate(redirectTo, { replace: true });
+    void navigate(redirectTo, { replace: true });
   }
 
   return (
@@ -31,7 +32,9 @@ export function LoginPage() {
         </div>
 
         {loginMutation.isError ? (
-          <Alert variant="error">{getErrorMessage(loginMutation.error, "Falha ao autenticar")}</Alert>
+          <Alert variant="error">
+            {getErrorMessage(loginMutation.error, "Falha ao autenticar")}
+          </Alert>
         ) : null}
 
         <form className="space-y-3" onSubmit={(e) => void handleSubmit(e)}>
@@ -64,7 +67,7 @@ export function LoginPage() {
 
         <p className="text-sm text-slate-600">
           Ainda não tem conta?{" "}
-          <Link className="font-semibold text-primary-700 hover:underline" to="/register">
+          <Link className="text-primary-700 font-semibold hover:underline" to="/register">
             Cadastre-se
           </Link>
         </p>

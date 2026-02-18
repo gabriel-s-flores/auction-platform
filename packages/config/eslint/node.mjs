@@ -23,4 +23,10 @@ export default [
       "n/no-extraneous-import": "off",
     },
   },
+  {
+    files: ["**/*.cjs"],
+    languageOptions: {
+      sourceType: "commonjs",
+    },
+  },
 ];
