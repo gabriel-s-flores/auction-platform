@@ -1,5 +1,5 @@
 import { Alert, Button, Card, Input, Label } from "@auction/ui";
-import type React from "react";
+import type { SyntheticEvent } from "react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -14,7 +14,7 @@ export function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
+  async function handleSubmit(event: SyntheticEvent<HTMLFormElement, Event>) {
     event.preventDefault();
 
     await registerMutation.mutateAsync({ name, email, password });

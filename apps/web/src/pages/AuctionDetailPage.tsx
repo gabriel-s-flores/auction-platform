@@ -1,156 +1,220 @@
 import { Alert, Badge, Button, Card, Input, Label } from "@auction/ui";
-import type React from "react";
-import { useMemo, useState } from "react";
+import type { SyntheticEvent } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
+import { Countdown } from "@/features/auctions/components/Countdown";
 import { useAuction } from "@/features/auctions/hooks/useAuction";
 import { useCloseAuction } from "@/features/auctions/hooks/useCloseAuction";
 import { usePlaceBid } from "@/features/auctions/hooks/usePlaceBid";
 import { getErrorMessage } from "@/shared/api/get-error-message";
 import { useAuth } from "@/shared/auth/auth-context";
+import { useAuctionRoom } from "@/shared/websocket/auction-events";
 
 function formatCurrency(value: number) {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
-}
-
-function formatDate(value: string) {
-  return new Date(value).toLocaleString("pt-BR");
+ return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 }
 
 export function AuctionDetailPage() {
-  const { auctionId = "" } = useParams();
-  const { isAuthenticated } = useAuth();
+ const { auctionId = "" } = useParams();
+ const { isAuthenticated } = useAuth();
 
-  const auctionQuery = useAuction(auctionId);
-  const placeBidMutation = usePlaceBid(auctionId);
-  const closeAuctionMutation = useCloseAuction(auctionId);
+ const auctionQuery = useAuction(auctionId);
+ const placeBidMutation = usePlaceBid(auctionId);
+ const closeAuctionMutation = useCloseAuction(auctionId);
 
-  const [bidAmount, setBidAmount] = useState("");
+ const [bidAmount, setBidAmount] = useState("");
+ const [isExpired, setIsExpired] = useState(false);
+ const [currentEndsAt, setCurrentEndsAt] = useState<string | null>(null);
+ const [showExtensionNotice, setShowExtensionNotice] = useState(false);
 
-  const minBid = useMemo(() => {
-    if (!auctionQuery.data) {
-      return 1;
-    }
+ // WebSocket integration
+ const { extendedPayload, newBidPayload, clearExtension, clearNewBid } =
+ useAuctionRoom(auctionId);
 
-    return auctionQuery.data.highestBid + 1;
-  }, [auctionQuery.data]);
+ // Handle auction extension from WebSocket
+ useEffect(() => {
+ if (extendedPayload) {
+ setCurrentEndsAt(extendedPayload.newEndsAt);
+ setShowExtensionNotice(true);
 
-  async function handlePlaceBid(event: React.SubmitEvent<HTMLFormElement>) {
-    event.preventDefault();
+ // Auto-hide extension notice after 5 seconds
+ const timeout = setTimeout(() => {
+ setShowExtensionNotice(false);
+ }, 5000);
 
-    await placeBidMutation.mutateAsync({ amount: Number(bidAmount) });
-    setBidAmount("");
-  }
+ clearExtension();
 
-  async function handleCloseAuction() {
-    await closeAuctionMutation.mutateAsync();
-  }
+ return () => clearTimeout(timeout);
+ }
+ }, [extendedPayload, clearExtension]);
 
-  if (auctionQuery.isLoading) {
-    return <p className="text-sm text-slate-600">Carregando leilão...</p>;
-  }
+ // Handle new bid from WebSocket (refresh auction data)
+ useEffect(() => {
+ if (newBidPayload) {
+ // Refetch auction data to show new bid
+ void auctionQuery.refetch();
+ clearNewBid();
+ }
+ }, [newBidPayload, auctionQuery, clearNewBid]);
 
-  if (auctionQuery.isError || !auctionQuery.data) {
-    return (
-      <Alert variant="error">
-        {getErrorMessage(auctionQuery.error, "Não foi possível carregar o leilão")}{" "}
-        <Link to="/auctions">Voltar</Link>
-      </Alert>
-    );
-  }
+ // Sync currentEndsAt with auction data
+ useEffect(() => {
+ if (auctionQuery.data && !currentEndsAt) {
+ setCurrentEndsAt(auctionQuery.data.endsAt);
+ }
+ }, [auctionQuery.data, currentEndsAt]);
 
-  const auction = auctionQuery.data;
+ const minBid = useMemo(() => {
+ if (!auctionQuery.data) {
+ return 1;
+ }
 
-  return (
-    <div className="space-y-4">
-      <Card className="space-y-3">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900">{auction.title}</h2>
-            <p className="text-sm text-slate-600">Encerramento: {formatDate(auction.endsAt)}</p>
-          </div>
+ return auctionQuery.data.highestBid + 1;
+ }, [auctionQuery.data]);
 
-          <Badge variant={auction.status === "OPEN" ? "success" : "danger"}>{auction.status}</Badge>
-        </div>
+ async function handlePlaceBid(event: SyntheticEvent<HTMLFormElement, Event>) {
+ event.preventDefault();
 
-        <p className="text-slate-700">{auction.description ?? "Sem descrição cadastrada."}</p>
+ await placeBidMutation.mutateAsync({ amount: Number(bidAmount) });
+ setBidAmount("");
+ }
 
-        <div className="grid gap-2 text-sm text-slate-700">
-          <p>
-            <span className="font-semibold">Lance inicial:</span>{" "}
-            {formatCurrency(auction.startingPrice)}
-          </p>
-          <p>
-            <span className="font-semibold">Maior lance:</span> {formatCurrency(auction.highestBid)}
-          </p>
-        </div>
-      </Card>
+ async function handleCloseAuction() {
+ await closeAuctionMutation.mutateAsync();
+ }
 
-      {isAuthenticated ? (
-        <Card className="space-y-3">
-          <h3 className="text-lg font-semibold text-slate-900">Enviar lance</h3>
+ if (auctionQuery.isLoading) {
+ return <p className="text-sm text-slate-600">Carregando leilão...</p>;
+ }
 
-          {placeBidMutation.isError ? (
-            <Alert variant="error">
-              {getErrorMessage(placeBidMutation.error, "Falha ao enviar lance")}
-            </Alert>
-          ) : null}
+ if (auctionQuery.isError || !auctionQuery.data) {
+ return (
+ <Alert variant="error">
+ {getErrorMessage(auctionQuery.error, "Não foi possível carregar o leilão")}{" "}
+ <Link to="/auctions">Voltar</Link>
+ </Alert>
+ );
+ }
 
-          {placeBidMutation.isSuccess ? (
-            <Alert variant="success">Lance enviado com sucesso!</Alert>
-          ) : null}
+ const auction = auctionQuery.data;
+ const displayEndsAt = currentEndsAt || auction.endsAt;
 
-          <form className="space-y-3" onSubmit={(e) => void handlePlaceBid(e)}>
-            <div>
-              <Label htmlFor="bid-amount">Valor do lance</Label>
-              <Input
-                id="bid-amount"
-                min={minBid}
-                onChange={(event) => setBidAmount(event.target.value)}
-                required
-                step={1}
-                type="number"
-                value={bidAmount}
-              />
-              <p className="mt-1 text-xs text-slate-500">
-                Mínimo permitido: {formatCurrency(minBid)}
-              </p>
-            </div>
+ return (
+ <div className="space-y-4">
+ {/* Extension notice banner */}
+ {showExtensionNotice && (
+ <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg flex items-center gap-2 animate-fade-in">
+ <svg
+ className="w-5 h-5 text-amber-600"
+ fill="none"
+ stroke="currentColor"
+ viewBox="0 0 24 24"
+ >
+ <path
+ strokeLinecap="round"
+ strokeLinejoin="round"
+ strokeWidth={2}
+ d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+ />
+ </svg>
+ <span className="font-medium">
+ Leilão prorrogado! Novo tempo adicionado devido ao anti-sniping.
+ </span>
+ </div>
+ )}
 
-            <Button
-              className="w-full"
-              disabled={placeBidMutation.isPending || auction.status !== "OPEN"}
-              type="submit"
-            >
-              {placeBidMutation.isPending ? "Enviando..." : "Dar lance"}
-            </Button>
-          </form>
+ <Card className="space-y-3">
+ <div className="flex items-start justify-between gap-3">
+ <div className="space-y-2">
+ <h2 className="text-2xl font-bold text-slate-900">{auction.title}</h2>
+ <Countdown endsAt={displayEndsAt} onExpire={() => setIsExpired(true)} />
+ </div>
 
-          <Button
-            className="w-full"
-            disabled={closeAuctionMutation.isPending || auction.status !== "OPEN"}
-            onClick={() => void handleCloseAuction()}
-            type="button"
-            variant="secondary"
-          >
-            {closeAuctionMutation.isPending ? "Encerrando..." : "Encerrar leilão"}
-          </Button>
+ <Badge variant={auction.status === "OPEN" && !isExpired ? "success" : "danger"}>
+ {auction.status}
+ </Badge>
+ </div>
 
-          {closeAuctionMutation.isError ? (
-            <Alert variant="error">
-              {getErrorMessage(closeAuctionMutation.error, "Falha ao encerrar leilão")}
-            </Alert>
-          ) : null}
-        </Card>
-      ) : (
-        <Alert variant="info">
-          Faça{" "}
-          <Link className="font-semibold underline" to="/login">
-            login
-          </Link>{" "}
-          para enviar lances e gerenciar leilões.
-        </Alert>
-      )}
-    </div>
-  );
+ <p className="text-slate-700">{auction.description ?? "Sem descrição cadastrada."}</p>
+
+ <div className="grid gap-2 text-sm text-slate-700">
+ <p>
+ <span className="font-semibold">Lance inicial:</span>{" "}
+ {formatCurrency(auction.startingPrice)}
+ </p>
+ <p>
+ <span className="font-semibold">Maior lance:</span>{" "}
+ {formatCurrency(auction.highestBid)}
+ </p>
+ </div>
+ </Card>
+
+ {isAuthenticated ? (
+ <Card className="space-y-3">
+ <h3 className="text-lg font-semibold text-slate-900">Enviar lance</h3>
+
+ {placeBidMutation.isError ? (
+ <Alert variant="error">
+ {getErrorMessage(placeBidMutation.error, "Falha ao enviar lance")}
+ </Alert>
+ ) : null}
+
+ {placeBidMutation.isSuccess ? (
+ <Alert variant="success">Lance enviado com sucesso!</Alert>
+ ) : null}
+
+ <form className="space-y-3" onSubmit={(e) => void handlePlaceBid(e)}>
+ <div>
+ <Label htmlFor="bid-amount">Valor do lance</Label>
+ <Input
+ id="bid-amount"
+ min={minBid}
+ onChange={(event) => setBidAmount(event.target.value)}
+ required
+ step={1}
+ type="number"
+ value={bidAmount}
+ />
+ <p className="mt-1 text-xs text-slate-500">
+ Mínimo permitido: {formatCurrency(minBid)}
+ </p>
+ </div>
+
+ <Button
+ className="w-full"
+ disabled={placeBidMutation.isPending || auction.status !== "OPEN" || isExpired}
+ type="submit"
+ >
+ {placeBidMutation.isPending ? "Enviando..." : "Dar lance"}
+ </Button>
+ </form>
+
+ <Button
+ className="w-full"
+ disabled={closeAuctionMutation.isPending || auction.status !== "OPEN" || isExpired}
+ onClick={() => void handleCloseAuction()}
+ type="button"
+ variant="secondary"
+ >
+ {closeAuctionMutation.isPending ? "Encerrando..." : "Encerrar leilão"}
+ </Button>
+
+ {closeAuctionMutation.isError ? (
+ <Alert variant="error">
+ {getErrorMessage(closeAuctionMutation.error, "Falha ao encerrar leilão")}
+ </Alert>
+ ) : null}
+ </Card>
+ ) : (
+ <Alert variant="info">
+ Faça{" "}
+ <Link className="font-semibold underline" to="/login">
+ login
+ </Link>{" "}
+ para enviar lances e gerenciar leilões.
+ </Alert>
+ )}
+ </div>
+ );
 }

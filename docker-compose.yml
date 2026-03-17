@@ -11,6 +11,11 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-auction_dev}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   api:
     build:
@@ -22,11 +27,12 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-admin}@postgres:5432/${POSTGRES_DB:-auction_dev}?schema=public
       API_PORT: 3333
-      # Add other env vars here or load from file
     env_file:
       - ./apps/api/.env.development
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    command: sh -c "bunx prisma migrate deploy && bun run dev"
     volumes:
       - ./apps/api:/app/apps/api
       - ./packages:/app/packages
