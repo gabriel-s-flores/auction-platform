@@ -1,7 +1,7 @@
 import { AppError } from "#application/errors/app-error";
 import { isAllowedMimeType, type StorageService, type UploadResult } from "#application/services/storage-service";
-import type { ImageRepository, CreateImageInput } from "#domain/repositories/image-repository";
 import type { AuctionRepository } from "#domain/repositories/auction-repository";
+import type { CreateImageInput,ImageRepository } from "#domain/repositories/image-repository";
 
 export interface UploadImageInput {
   auctionId: string;

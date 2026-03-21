@@ -7,6 +7,7 @@ import Fastify from "fastify";
 import { z, ZodError } from "zod";
 
 import { AppError } from "#application/errors/app-error";
+import { ALLOWED_MIME_TYPES } from "#application/services/storage-service";
 import { AuthenticateUserUseCase } from "#application/use-cases/authenticate-user.use-case";
 import { CloseAuctionUseCase } from "#application/use-cases/close-auction.use-case";
 import { CreateAuctionUseCase } from "#application/use-cases/create-auction.use-case";
@@ -15,10 +16,9 @@ import { GetAuctionByIdUseCase } from "#application/use-cases/get-auction-by-id.
 import { ListOpenAuctionsUseCase } from "#application/use-cases/list-open-auctions.use-case";
 import { LoginUserUseCase } from "#application/use-cases/login-user.use-case";
 import { PlaceBidUseCase } from "#application/use-cases/place-bid.use-case";
-import { ReorderAuctionImagesUseCase } from "#application/use-cases/reorder-auction-images.use-case";
 import { RegisterUserUseCase } from "#application/use-cases/register-user.use-case";
+import { ReorderAuctionImagesUseCase } from "#application/use-cases/reorder-auction-images.use-case";
 import { UploadAuctionImagesUseCase } from "#application/use-cases/upload-auction-images.use-case";
-import { ALLOWED_MIME_TYPES } from "#application/services/storage-service";
 import { env } from "#infrastructure/config/env";
 import { PrismaAuctionRepository } from "#infrastructure/repositories/prisma-auction.repository";
 import { PrismaImageRepository } from "#infrastructure/repositories/prisma-image.repository";

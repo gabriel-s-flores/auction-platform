@@ -1,7 +1,7 @@
 import { AppError } from "#application/errors/app-error";
-import type { ImageRepository } from "#domain/repositories/image-repository";
-import type { AuctionRepository } from "#domain/repositories/auction-repository";
 import type { StorageService } from "#application/services/storage-service";
+import type { AuctionRepository } from "#domain/repositories/auction-repository";
+import type { ImageRepository } from "#domain/repositories/image-repository";
 
 export interface DeleteImageInput {
   auctionId: string;

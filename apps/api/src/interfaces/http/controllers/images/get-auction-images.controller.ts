@@ -1,5 +1,5 @@
-import type { ImageRepository } from "#domain/repositories/image-repository";
 import type { StorageService } from "#application/services/storage-service";
+import type { ImageRepository } from "#domain/repositories/image-repository";
 
 export interface ImageDto {
   id: string;

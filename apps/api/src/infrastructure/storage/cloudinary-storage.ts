@@ -1,4 +1,4 @@
-import { v2 as cloudinary, type UploadApiErrorResponse, type UploadApiResponse } from "cloudinary";
+import { type UploadApiErrorResponse, type UploadApiResponse,v2 as cloudinary } from "cloudinary";
 
 import type { StorageService, UploadResult } from "#application/services/storage-service";
 import { env } from "#infrastructure/config/env";

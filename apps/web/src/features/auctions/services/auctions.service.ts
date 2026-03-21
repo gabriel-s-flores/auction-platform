@@ -3,14 +3,13 @@ import type {
  CreateAuctionRequest,
  CreateAuctionResponse,
  GetAuctionByIdResponse,
+ GetAuctionImagesResponse,
  ImageDto,
  ListOpenAuctionsResponse,
  PlaceBidRequest,
  PlaceBidResponse,
- UploadImagesResponse,
  ReorderImagesRequest,
- GetAuctionImagesResponse
-} from "@auction/shared-types";
+ UploadImagesResponse} from "@auction/shared-types";
 
 import { httpClient } from "@/shared/api/http-client";
 

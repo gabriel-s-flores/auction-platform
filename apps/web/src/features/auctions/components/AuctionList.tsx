@@ -36,7 +36,6 @@ export function AuctionList() {
             {/* Thumbnail */}
             <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-slate-100">
               {thumbnailUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
                 <img src={thumbnailUrl} alt={auction.title} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
