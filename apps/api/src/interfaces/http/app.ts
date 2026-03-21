@@ -185,7 +185,7 @@ export function buildApp() {
  rateLimit: {
  max: 5,
  timeWindow: "15 minutes",
- keyGenerator: (request) => request.body?.email || request.ip,
+ keyGenerator: (request) => (request.body as { email?: string })?.email || request.ip,
  },
  },
  }, async (request, reply) => {
@@ -199,7 +199,7 @@ export function buildApp() {
  rateLimit: {
  max: 5,
  timeWindow: "15 minutes",
- keyGenerator: (request) => request.body?.email || request.ip,
+ keyGenerator: (request) => (request.body as { email?: string })?.email || request.ip,
  },
  },
  }, async (request) => {
