@@ -8,7 +8,11 @@ const envSchema = z.object({
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info"),
   DATABASE_URL: z.string().min(1, "DATABASE_URL é obrigatório"),
   JWT_SECRET: z.string().min(32, "JWT_SECRET deve ter ao menos 32 caracteres"),
-  JWT_EXPIRES_IN: z.string().default("1h")
+  JWT_EXPIRES_IN: z.string().default("1h"),
+  CLOUDINARY_CLOUD_NAME: z.string().min(1, "CLOUDINARY_CLOUD_NAME é obrigatório"),
+  CLOUDINARY_API_KEY: z.string().min(1, "CLOUDINARY_API_KEY é obrigatório"),
+  CLOUDINARY_API_SECRET: z.string().min(1, "CLOUDINARY_API_SECRET é obrigatório"),
+  UPLOAD_MAX_SIZE: z.coerce.number().default(10485760), // 10MB
 });
 
 export type AppEnv = z.infer<typeof envSchema>;

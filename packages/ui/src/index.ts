@@ -2,5 +2,7 @@ export * from "./components/Alert";
 export * from "./components/Badge";
 export * from "./components/Button";
 export * from "./components/Card";
+export * from "./components/ImageCarousel";
+export * from "./components/ImageUploader";
 export * from "./components/Input";
 export * from "./components/Label";

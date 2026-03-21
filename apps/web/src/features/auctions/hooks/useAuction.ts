@@ -4,7 +4,7 @@ import { auctionsService } from "@/features/auctions/services/auctions.service";
 
 export function useAuction(auctionId: string) {
   return useQuery({
-    queryKey: ["auctions", auctionId],
+    queryKey: ["auction", auctionId],
     queryFn: () => auctionsService.getById(auctionId),
     enabled: Boolean(auctionId)
   });

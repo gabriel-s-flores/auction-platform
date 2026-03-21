@@ -1,5 +1,14 @@
 export type AuctionStatus = "OPEN" | "CLOSED";
 
+export interface ImageDto {
+  id: string;
+  url: string;
+  thumbnailUrl: string;
+  alt: string | null;
+  position: number;
+  isPrimary: boolean;
+}
+
 export interface AuctionDto {
   id: string;
   title: string;
@@ -12,6 +21,7 @@ export interface AuctionDto {
   version: number;
   createdAt: string;
   updatedAt: string;
+  images?: ImageDto[];
 }
 
 export interface BidDto {
@@ -51,4 +61,20 @@ export interface PlaceBidPayload {
 
 export interface PlaceBidResponse {
   data: PlaceBidPayload;
+}
+
+export interface UploadImagesResponse {
+  data: ImageDto[];
+}
+
+export interface ReorderImagesRequest {
+  positions: Array<{
+    id: string;
+    position: number;
+    isPrimary: boolean;
+  }>;
+}
+
+export interface GetAuctionImagesResponse {
+  data: ImageDto[];
 }

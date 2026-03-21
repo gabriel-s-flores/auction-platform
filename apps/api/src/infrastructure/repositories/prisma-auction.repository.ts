@@ -144,6 +144,9 @@ export class PrismaAuctionRepository implements AuctionRepository {
 				if (input.amount <= auction.highestBid) {
 					throw new AppError("Lance deve ser maior que o lance atual", 409);
 				}
+				if (input.bidderId === auction.sellerId) {
+					throw new AppError("Vendedores não podem dar lances em seus próprios leilões", 403);
+				}
 
 				// Anti-sniping logic: extend auction if <= 30 seconds remaining
 				const ANTI_SNIPING_THRESHOLD_MS = 30 * 1000; // 30 seconds
