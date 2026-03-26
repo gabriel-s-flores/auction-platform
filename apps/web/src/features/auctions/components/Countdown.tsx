@@ -1,192 +1,287 @@
-import { useEffect, useReducer, useState } from "react";
+import { useEffect, useMemo, useReducer } from "react";
 
 // Constants matching backend
 const ANTI_SNIPING_THRESHOLD_MS = 30 * 1000; // 30 seconds
+const WARNING_THRESHOLD_MS = 60 * 1000; // 1 minute
 
 interface CountdownState {
- timeRemaining: number;
- isExpired: boolean;
+  timeRemaining: number;
+  isExpired: boolean;
 }
 
 type CountdownAction =
- | { type: "TICK"; endsAt: number }
- | { type: "EXTEND"; newEndsAt: number };
+  | { type: "TICK"; endsAt: number }
+  | { type: "EXTEND"; newEndsAt: number };
 
 function countdownReducer(state: CountdownState, action: CountdownAction): CountdownState {
- if (action.type === "TICK") {
- const timeRemaining = action.endsAt - Date.now();
-
- if (timeRemaining <= 0) {
- return { timeRemaining: 0, isExpired: true };
- }
-
- return { timeRemaining, isExpired: false };
- }
-
- if (action.type === "EXTEND") {
- const timeRemaining = action.newEndsAt - Date.now();
- return {
- timeRemaining: Math.max(timeRemaining, 0),
- isExpired: timeRemaining <= 0,
- };
- }
-
- return state;
+  if (action.type === "TICK") {
+    const timeRemaining = action.endsAt - Date.now();
+    if (timeRemaining <= 0) {
+      return { timeRemaining: 0, isExpired: true };
+    }
+    return { timeRemaining, isExpired: false };
+  }
+  if (action.type === "EXTEND") {
+    const timeRemaining = action.newEndsAt - Date.now();
+    return { timeRemaining: Math.max(timeRemaining, 0), isExpired: timeRemaining <= 0 };
+  }
+  return state;
 }
 
 function formatTime(ms: number): string {
- if (ms <= 0) {
- return "00:00:00";
- }
+  if (ms <= 0) {
+    return "00:00:00";
+  }
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
 
- const totalSeconds = Math.floor(ms / 1000);
- const hours = Math.floor(totalSeconds / 3600);
- const minutes = Math.floor((totalSeconds % 3600) / 60);
- const seconds = totalSeconds % 60;
-
- return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+  // Format with consistent width using tabular-nums
+  return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 }
 
 function formatTimeCompact(ms: number): string {
- if (ms <= 0) {
- return "Encerrado";
- }
+  if (ms <= 0) {
+    return "Encerrado";
+  }
+  const totalSeconds = Math.floor(ms / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
 
- const totalSeconds = Math.floor(ms / 1000);
- const days = Math.floor(totalSeconds / 86400);
- const hours = Math.floor((totalSeconds % 86400) / 3600);
- const minutes = Math.floor((totalSeconds % 3600) / 60);
-
- if (days > 0) {
- return `${days}d ${hours}h`;
- }
-
- if (hours > 0) {
- return `${hours}h ${minutes}m`;
- }
-
- return `${minutes}m`;
+  if (days > 0) {
+    return `${days}d ${hours}h`;
+  }
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  return `${minutes}m ${seconds}s`;
 }
 
 interface CountdownProps {
- endsAt: string;
- onExpire?: () => void;
- variant?: "default" | "compact";
+  endsAt: string;
+  onExpire?: () => void;
+  variant?: "default" | "compact" | "hero";
 }
 
-function getCompactTextColor(isExpired: boolean, isCritical: boolean): string {
- if (isExpired) {
- return "text-rose-600 font-medium";
- }
- if (isCritical) {
- return "text-red-600 font-semibold";
- }
- return "text-slate-600";
+export function getTimeRemainingState(timeRemaining: number) {
+  return {
+    isExpired: timeRemaining <= 0,
+    isCritical: timeRemaining > 0 && timeRemaining <= ANTI_SNIPING_THRESHOLD_MS,
+    isWarning: timeRemaining > ANTI_SNIPING_THRESHOLD_MS && timeRemaining <= WARNING_THRESHOLD_MS,
+    formattedTime: formatTime(timeRemaining),
+    displayText: formatTimeCompact(timeRemaining),
+  };
 }
 
-function getTimerTextColor(isExpired: boolean, isCritical: boolean): string {
- if (isExpired) {
- return "text-rose-600";
- }
- if (isCritical) {
- return "text-red-600 animate-pulse";
- }
- return "text-slate-900";
+function getUrgencyColor(isExpired: boolean, isCritical: boolean, isWarning: boolean): string {
+  if (isExpired) return "text-stone-500";
+  if (isCritical) return "text-rose-600";
+  if (isWarning) return "text-amber-600";
+  return "text-slate-700";
 }
 
-export function Countdown({ endsAt: initialEndsAt, onExpire, variant = "default" }: CountdownProps) {
- const [endsAt, setEndsAt] = useState(initialEndsAt);
- const endsAtTime = new Date(endsAt).getTime();
+function getTimerIconBgClass(isCritical: boolean): string {
+  return isCritical ? "bg-rose-100" : "bg-stone-100";
+}
 
- const [state, dispatch] = useReducer(countdownReducer, {
- timeRemaining: endsAtTime - Date.now(),
- isExpired: endsAtTime <= Date.now(),
- });
+function TimerIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+  );
+}
 
- // Allow external updates to endsAt (e.g., from WebSocket)
- useEffect(() => {
- if (endsAt !== initialEndsAt) {
- setEndsAt(initialEndsAt);
- dispatch({ type: "EXTEND", newEndsAt: new Date(initialEndsAt).getTime() });
- }
- }, [endsAt, initialEndsAt]);
+function UrgencyIndicator({ isCritical, isExpired }: { isCritical: boolean; isExpired: boolean }) {
+  if (isCritical && !isExpired) {
+    return <span className="h-2 w-2 animate-pulse rounded-full bg-rose-500" />;
+  }
+  return null;
+}
 
- useEffect(() => {
- if (state.isExpired) {
- return;
- }
+function CriticalPulseIndicator() {
+  return (
+    <span className="relative flex h-2 w-2">
+      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
+      <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-500" />
+    </span>
+  );
+}
 
- const interval = setInterval(() => {
- dispatch({ type: "TICK", endsAt: endsAtTime });
- }, 1000);
+function CountdownStatusLabel({
+  isExpired,
+  isCritical,
+  isWarning,
+}: {
+  isExpired: boolean;
+  isCritical: boolean;
+  isWarning: boolean;
+}) {
+  if (isExpired) {
+    return <span className="text-sm font-medium text-stone-500">Leilão encerrado</span>;
+  }
+  if (isCritical) {
+    return (
+      <>
+        <UrgencyIndicator isCritical={isCritical} isExpired={isExpired} />
+        <span className="text-sm font-semibold uppercase tracking-wide text-rose-600">
+          Prorrogação ativa: menos de 30s restante!
+        </span>
+      </>
+    );
+  }
+  if (isWarning) {
+    return <span className="text-sm font-medium text-amber-600">Terminando em breve</span>;
+  }
+  return <span className="text-sm text-slate-500">Tempo restante</span>;
+}
 
- return () => {
- clearInterval(interval);
- };
- }, [endsAtTime, state.isExpired]);
+function CompactCountdown({ timeState }: { timeState: ReturnType<typeof getTimeRemainingState> }) {
+  const urgencyColor = getUrgencyColor(
+    timeState.isExpired,
+    timeState.isCritical,
+    timeState.isWarning
+  );
 
- useEffect(() => {
- if (state.isExpired && onExpire) {
- onExpire();
- }
- }, [state.isExpired, onExpire]);
+  return (
+    <div className="flex items-center gap-1.5">
+      {timeState.isCritical && !timeState.isExpired && <CriticalPulseIndicator />}
+      <span
+        className={`text-sm font-medium ${urgencyColor} ${
+          timeState.isCritical ? "animate-countdown-pulse" : ""
+        }`}
+      >
+        {timeState.displayText}
+      </span>
+    </div>
+  );
+}
 
- // Determine if in critical zone (< 30 seconds)
- const isCritical = state.timeRemaining > 0 && state.timeRemaining <= ANTI_SNIPING_THRESHOLD_MS;
+function HeroCountdown({ timeState }: { timeState: ReturnType<typeof getTimeRemainingState> }) {
+  const urgencyColor = getUrgencyColor(
+    timeState.isExpired,
+    timeState.isCritical,
+    timeState.isWarning
+  );
 
- if (variant === "compact") {
- return (
- <span className={`text-sm ${getCompactTextColor(state.isExpired, isCritical)}`}>
- {formatTimeCompact(state.timeRemaining)}
- </span>
- );
- }
+  return (
+    <div className="flex flex-col">
+      <div className="flex items-center gap-3">
+        <div className={`rounded-full p-2 ${getTimerIconBgClass(timeState.isCritical)}`}>
+          <TimerIcon
+            className={`h-5 w-5 ${
+              timeState.isCritical ? "text-rose-600 animate-pulse" : "text-slate-600"
+            }`}
+          />
+        </div>
+        <div className="relative">
+          <span
+            className={`timer-display text-4xl font-bold tracking-wider ${urgencyColor} ${
+              timeState.isCritical ? "animate-countdown-pulse relative z-10" : ""
+            }`}
+          >
+            {timeState.formattedTime}
+          </span>
+          {timeState.isCritical && !timeState.isExpired && (
+            <span className="absolute inset-0 font-mono text-4xl font-bold text-rose-600 opacity-40 blur-md">
+              {timeState.formattedTime}
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="mt-2 flex items-center gap-2">
+        <CountdownStatusLabel
+          isExpired={timeState.isExpired}
+          isCritical={timeState.isCritical}
+          isWarning={timeState.isWarning}
+        />
+      </div>
+    </div>
+  );
+}
 
- return (
- <div className="flex flex-col gap-1">
- <span className={`text-sm ${isCritical ? "text-red-600 font-semibold" : "text-slate-600"}`}>
- Tempo restante:
- </span>
+function DefaultCountdown({ timeState }: { timeState: ReturnType<typeof getTimeRemainingState> }) {
+  const urgencyColor = getUrgencyColor(
+    timeState.isExpired,
+    timeState.isCritical,
+    timeState.isWarning
+  );
 
- {/* Critical zone styling with pulse animation */}
- <div className={`relative ${isCritical ? "animate-pulse-subtle" : ""}`}>
- <span
- className={`font-mono text-2xl font-bold ${getTimerTextColor(state.isExpired, isCritical)}`}
- style={
- isCritical
- ? {
- textShadow: "0 0 10px rgba(220, 38, 38, 0.5)",
- }
- : undefined
- }
- >
- {formatTime(state.timeRemaining)}
- </span>
+  return (
+    <div className="flex flex-col gap-1">
+      <span
+        className={`text-sm ${timeState.isCritical ? "text-rose-600 font-semibold" : "text-slate-500"}`}
+      >
+        Tempo restante:
+      </span>
+      <div className="flex items-baseline gap-2">
+        <span
+          className={`timer-display text-2xl font-bold tracking-wider ${urgencyColor} ${
+            timeState.isCritical ? "animate-countdown-pulse" : ""
+          }`}
+        >
+          {timeState.formattedTime}
+        </span>
+        {timeState.isCritical && !timeState.isExpired && (
+          <div className="flex items-center gap-1.5">
+            <UrgencyIndicator isCritical={timeState.isCritical} isExpired={timeState.isExpired} />
+            <span className="text-xs font-semibold uppercase tracking-wide text-rose-600">
+              Prorrogação ativa
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
- {/* Red glow effect for critical state */}
- {isCritical && (
- <span
- className="absolute inset-0 font-mono text-2xl font-bold text-red-600 opacity-50 blur-sm animate-pulse"
- aria-hidden="true"
- >
- {formatTime(state.timeRemaining)}
- </span>
- )}
- </div>
+export function Countdown({
+  endsAt: initialEndsAt,
+  onExpire,
+  variant = "default",
+}: CountdownProps) {
+  const endsAtTime = useMemo(() => new Date(initialEndsAt).getTime(), [initialEndsAt]);
 
- {/* Extension notice */}
- {isCritical && !state.isExpired && (
- <div className="flex items-center gap-1.5 mt-1">
- <span className="inline-block w-2 h-2 bg-red-600 rounded-full animate-pulse" />
- <span className="text-xs font-semibold text-red-600 uppercase tracking-wide">
- PRORROGAÇÃO ATIVA: {"<"} 30s restante!
- </span>
- </div>
- )}
+  const [state, dispatch] = useReducer(countdownReducer, {
+    timeRemaining: endsAtTime - Date.now(),
+    isExpired: endsAtTime <= Date.now(),
+  });
 
- {state.isExpired && (
- <span className="text-sm font-medium text-rose-600">Leilão encerrado</span>
- )}
- </div>
- );
+  // Tick effect
+  useEffect(() => {
+    if (state.isExpired) {
+      return;
+    }
+    const interval = setInterval(() => {
+      dispatch({ type: "TICK", endsAt: endsAtTime });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [endsAtTime, state.isExpired]);
+
+  // Expire callback
+  useEffect(() => {
+    if (state.isExpired && onExpire) {
+      onExpire();
+    }
+  }, [state.isExpired, onExpire]);
+
+  const timeState = getTimeRemainingState(state.timeRemaining);
+
+  if (variant === "compact") {
+    return <CompactCountdown timeState={timeState} />;
+  }
+
+  if (variant === "hero") {
+    return <HeroCountdown timeState={timeState} />;
+  }
+
+  return <DefaultCountdown timeState={timeState} />;
 }

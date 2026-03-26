@@ -11,12 +11,16 @@
   },
   "peerDependencies": {
     "react": "^18.3.1 || ^19.0.0",
-    "react-dom": "^18.3.1 || ^19.0.0"
+    "react-dom": "^18.3.1 || ^19.0.0",
+    "react-router-dom": "^7.0.0"
   },
   "dependencies": {
-    "@auction/shared-types": "workspace:*"
+    "@auction/shared-types": "workspace:*",
+    "browser-image-compression": "2.0.2",
+    "yet-another-react-lightbox": "3.29.1"
   },
   "devDependencies": {
-    "@auction/config": "workspace:*"
+    "@auction/config": "workspace:*",
+    "react-router-dom": "^7.0.0"
   }
 }

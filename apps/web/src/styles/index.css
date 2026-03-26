@@ -1,81 +1,166 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary-50: #f0fdf4;
-  --color-primary-100: #dcfce7;
-  --color-primary-500: #22c55e;
-  --color-primary-600: #16a34a;
-  --color-primary-700: #15803d;
+  /* Neutral palette - off-whites and light grays */
+  --color-bg-base: #fafaf9;          /* Stone 50 - page background */
+  --color-bg-elevated: #ffffff;       /* White - cards */
+  --color-bg-muted: #f5f5f4;         /* Stone 100 - subtle backgrounds */
+  --color-bg-pressed: #e7e5e4;       /* Stone 200 - pressed states */
+
+  /* Text colors - high contrast slate */
+  --color-text-primary: #0f172a;      /* Slate 900 */
+  --color-text-secondary: #475569;    /* Slate 600 */
+  --color-text-tertiary: #94a3b8;     /* Slate 400 */
+
+  /* Accent colors - amber/orange for urgency */
+  --color-amber-50: #fffbeb;
+  --color-amber-100: #fef3c7;
+  --color-amber-500: #f59e0b;
+  --color-amber-600: #d97706;
+  --color-amber-700: #b45309;
+
+  /* Danger/Urgent - red for critical countdown */
+  --color-rose-50: #fff1f2;
+  --color-rose-100: #ffe4e6;
+  --color-rose-500: #f43f5e;
+  --color-rose-600: #e11d48;
+  --color-rose-700: #be123c;
+
+  /* Success - emerald for winning/completed */
+  --color-emerald-50: #ecfdf5;
+  --color-emerald-100: #d1fae5;
+  --color-emerald-500: #10b981;
+  --color-emerald-600: #059669;
+  --color-emerald-700: #047857;
+
+  /* Border colors */
+  --color-border-default: #e7e5e4;    /* Stone 200 */
+  --color-border-hover: #d6d3d1;    /* Stone 300 */
 }
 
-/*
-  The default border color has changed to `currentcolor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
+/* Base styles */
 @layer base {
   *,
   ::after,
   ::before,
   ::backdrop,
   ::file-selector-button {
-    border-color: var(--color-gray-200, currentcolor);
+    border-color: var(--color-border-default, currentcolor);
+  }
+
+  html {
+    font-feature-settings: "cv11", "ss01";
+    font-variation-settings: "opsz" 32;
+  }
+
+  body {
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", "Roboto", sans-serif;
+    background-color: var(--color-bg-base);
+    color: var(--color-text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
-body {
-  font-family:
-    Inter,
-    system-ui,
-    -apple-system,
-    Segoe UI,
-    Roboto,
-    sans-serif;
+/* Monospace for numbers - prevents layout shifts */
+@utility font-mono-nums {
+  font-family: "SF Mono", "Monaco", "Inconsolata", "Roboto Mono", monospace;
+  font-feature-settings: "tnum" 1;
+  font-variant-numeric: tabular-nums;
 }
 
-/* Anti-sniping critical countdown animations */
-@keyframes pulse-subtle {
-	0%, 100% {
-		opacity: 1;
-		transform: scale(1);
-	}
-	50% {
-		opacity: 0.9;
-		transform: scale(1.02);
-	}
+/* --- Time countdown specific animations --- */
+@keyframes countdown-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.015);
+  }
 }
 
-@keyframes glow-pulse {
-	0%, 100% {
-		box-shadow: 0 0 5px rgba(220, 38, 38, 0.3);
-	}
-	50% {
-		box-shadow: 0 0 20px rgba(220, 38, 38, 0.5);
-	}
+@keyframes urgent-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(244, 63, 94, 0);
+  }
+  50% {
+    box-shadow: 0 0 20px 4px rgba(244, 63, 94, 0.25);
+  }
 }
 
-@keyframes fade-in {
-	from {
-		opacity: 0;
-		transform: translateY(-10px);
-	}
-	to {
-		opacity: 1;
-		transform: translateY(0);
-	}
+@keyframes extension-slide {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.animate-pulse-subtle {
-	animation: pulse-subtle 1s ease-in-out infinite;
+@keyframes bid-highlight {
+  0% {
+    background-color: rgba(245, 158, 11, 0.2);
+  }
+  100% {
+    background-color: transparent;
+  }
 }
 
-.animate-glow-pulse {
-	animation: glow-pulse 1s ease-in-out infinite;
+.animate-countdown-pulse {
+  animation: countdown-pulse 1s ease-in-out infinite;
 }
 
-.animate-fade-in {
-	animation: fade-in 0.3s ease-out;
+.animate-urgent-glow {
+  animation: urgent-glow 1.5s ease-in-out infinite;
+}
+
+.animate-extension-slide {
+  animation: extension-slide 0.3s ease-out;
+}
+
+.animate-bid-highlight {
+  animation: bid-highlight 1s ease-out;
+}
+
+/* Utility classes for auction states */
+.bid-urgency-critical {
+  @apply text-rose-600 font-semibold;
+}
+
+.bid-urgency-warning {
+  @apply text-amber-600 font-medium;
+}
+
+.bid-urgency-normal {
+  @apply text-slate-700;
+}
+
+/* Focus states */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-white;
+}
+
+/* Card hover effect */
+.card-hover {
+  @apply transition duration-200 ease-out;
+}
+
+.card-hover:hover {
+  @apply shadow-md -translate-y-0.5;
+}
+
+/* Price display - monospaced to prevent jumps */
+.price-display {
+  @apply font-mono-nums font-semibold tracking-tight;
+}
+
+/* Timer display - tabular nums prevents width changes */
+.timer-display {
+  @apply font-mono-nums font-bold tracking-wider;
 }
