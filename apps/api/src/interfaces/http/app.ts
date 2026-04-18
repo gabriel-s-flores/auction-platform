@@ -1,5 +1,6 @@
 /* eslint-disable sonarjs/deprecation */
 import cors from "@fastify/cors";
+import helmet from "@fastify/helmet";
 import jwt from "@fastify/jwt";
 import multipart from "@fastify/multipart";
 import rateLimit from "@fastify/rate-limit";
@@ -104,13 +105,30 @@ export function buildApp() {
     return reply.status(500).send({ error: "Erro interno" });
   });
 
-  app.register(cors, {
-    origin: env.CORS_ORIGIN,
-    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  });
+app.register(cors, {
+  origin: env.CORS_ORIGIN,
+  methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+});
 
-  app.register(jwt, {
+// Security headers including X-Content-Type-Options: nosniff
+app.register(helmet, {
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: [],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+});
+
+app.register(jwt, {
     secret: env.JWT_SECRET,
   });
 
