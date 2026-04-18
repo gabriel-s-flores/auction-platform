@@ -237,7 +237,7 @@ export function buildApp() {
 	}
 
 	// Custom authentication hook that reads from cookie
-	app.decorateRequest<AuthenticatedUser | null>("user", null);
+	// Note: @fastify/jwt already decorates request with 'user', so we don't need decorateRequest here
 	app.addHook("onRequest", async (request, reply) => {
 		const accessToken = request.cookies[ACCESS_TOKEN_COOKIE];
 		if (!accessToken) {

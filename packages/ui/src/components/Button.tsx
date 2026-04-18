@@ -9,7 +9,7 @@ export type ButtonProps = PropsWithChildren<
 >;
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: "bg-primary-600 text-white hover:bg-primary-700",
+  primary: "bg-amber-600 text-white hover:bg-amber-700",
   secondary: "bg-slate-100 text-slate-800 hover:bg-slate-200"
 };
 
