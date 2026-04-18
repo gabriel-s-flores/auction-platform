@@ -25,6 +25,7 @@
     "db:seed:staging": "bun --env-file=.env.staging prisma/seed.ts"
   },
   "dependencies": {
+    "@fastify/compress": "8.3.1",
     "@fastify/cookie": "11.0.2",
     "@fastify/cors": "^10.1.0",
     "@fastify/helmet": "13.0.2",

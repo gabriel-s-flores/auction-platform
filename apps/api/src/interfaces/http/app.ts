@@ -1,4 +1,5 @@
 /* eslint-disable sonarjs/deprecation */
+import compress from "@fastify/compress";
 import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
@@ -43,44 +44,44 @@ import { UploadAuctionImagesController } from "#interfaces/http/controllers/imag
 import type { AuthenticatedUser } from "#interfaces/http/types/authenticated-user";
 
 const registerSchema = z.object({
-	name: z.string().min(2).max(100),
-	email: z.string().email({}).max(255),
-	password: z.string().min(8).max(128),
+  name: z.string().min(2).max(100),
+  email: z.string().email({}).max(255),
+  password: z.string().min(8).max(128),
 });
 
 const loginSchema = z.object({
-	email: z.string().email({}).max(255),
-	password: z.string().min(1),
+  email: z.string().email({}).max(255),
+  password: z.string().min(1),
 });
 
 const createAuctionSchema = z.object({
-	title: z.string().min(3).max(200),
-	description: z.string().max(5000).nullable().optional().default(null),
-	startingPrice: z.number().int().positive(),
-	endsAt: z.string().datetime({}),
+  title: z.string().min(3).max(200),
+  description: z.string().max(5000).nullable().optional().default(null),
+  startingPrice: z.number().int().positive(),
+  endsAt: z.string().datetime({}),
 });
 
 const auctionIdSchema = z.object({
-	auctionId: z.string().uuid({}),
+  auctionId: z.string().uuid({}),
 });
 
 const placeBidSchema = z.object({
-	amount: z.number().int().positive(),
+  amount: z.number().int().positive(),
 });
 
 const reorderImagesSchema = z.object({
-	positions: z.array(
-		z.object({
-			id: z.string().uuid(),
-			position: z.number().int().min(0),
-			isPrimary: z.boolean(),
-		})
-	),
+  positions: z.array(
+    z.object({
+      id: z.string().uuid(),
+      position: z.number().int().min(0),
+      isPrimary: z.boolean(),
+    })
+  ),
 });
 
 const imageIdSchema = z.object({
-	auctionId: z.string().uuid(),
-	imageId: z.string().uuid(),
+  auctionId: z.string().uuid(),
+  imageId: z.string().uuid(),
 });
 
 // Cookie names
@@ -88,402 +89,448 @@ const ACCESS_TOKEN_COOKIE = "access_token";
 const REFRESH_TOKEN_COOKIE = "refresh_token";
 
 export function buildApp() {
-	const app = Fastify({
-		logger: {
-			level: env.LOG_LEVEL,
-			base: {
-				service: "auction-api",
-				appEnv: env.APP_ENV,
-				nodeEnv: env.NODE_ENV,
-			},
-		},
-	});
+  const app = Fastify({
+    logger: {
+      level: env.LOG_LEVEL,
+      base: {
+        service: "auction-api",
+        appEnv: env.APP_ENV,
+        nodeEnv: env.NODE_ENV,
+      },
+    },
+  });
 
-	app.setErrorHandler((error, request, reply) => {
-		request.log.error({ error }, "Unhandled error");
-		if (error instanceof AppError) {
-			return reply.status(error.statusCode).send({ error: error.message });
-		}
+  app.setErrorHandler((error, request, reply) => {
+    request.log.error({ error }, "Unhandled error");
+    if (error instanceof AppError) {
+      return reply.status(error.statusCode).send({ error: error.message });
+    }
 
-		if (error instanceof ZodError) {
-			return reply.status(400).send({ error: "Dados inválidos" });
-		}
+    if (error instanceof ZodError) {
+      return reply.status(400).send({ error: "Dados inválidos" });
+    }
 
-		return reply.status(500).send({ error: "Erro interno" });
-	});
+    return reply.status(500).send({ error: "Erro interno" });
+  });
 
-	app.register(cors, {
-		origin: env.CORS_ORIGIN,
-		methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-		allowedHeaders: ["Content-Type", "Authorization"],
-		credentials: true,
-	});
+  app.register(cors, {
+    origin: env.CORS_ORIGIN,
+    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  });
 
-	// Security headers including X-Content-Type-Options: nosniff
-	app.register(helmet, {
-		contentSecurityPolicy: {
-			directives: {
-				defaultSrc: ["'self'"],
-				imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
-				scriptSrc: ["'self'"],
-				styleSrc: ["'self'", "'unsafe-inline'"],
-				connectSrc: ["'self'"],
-				fontSrc: ["'self'"],
-				objectSrc: ["'none'"],
-				upgradeInsecureRequests: [],
-			},
-		},
-		crossOriginEmbedderPolicy: false,
-	});
+  // Compression (Brotli > gzip > deflate)
+  app.register(compress, {
+    global: true,
+    encodings: ["br", "gzip", "deflate"],
+  });
 
-	app.register(jwt, {
-		secret: env.JWT_SECRET,
-	});
+  // Security headers including X-Content-Type-Options: nosniff
+  app.register(helmet, {
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
+        scriptSrc: ["'self'"],
+        // 'unsafe-inline' required for Tailwind CSS runtime styling
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        connectSrc: ["'self'"],
+        fontSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+        frameAncestors: ["'none'"],
+        upgradeInsecureRequests: [],
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+    hsts: {
+      maxAge: 31536000, // 1 year
+      includeSubDomains: true,
+      preload: true,
+    },
+    referrerPolicy: {
+      policy: "strict-origin-when-cross-origin",
+    },
+  });
 
-	app.register(cookie, {
-		secret: env.COOKIE_SECRET,
-		parseOptions: {
-			httpOnly: true,
-			secure: env.SECURE_COOKIES,
-			sameSite: "lax",
-			path: "/",
-		},
-	});
+  app.register(jwt, {
+    secret: env.JWT_SECRET,
+  });
 
-	// Global rate limiting: 100 requests per 15 minutes per IP
-	app.register(rateLimit, {
-		max: 100,
-		timeWindow: "15 minutes",
-		keyGenerator: (request) => request.ip,
-	});
-	app.register(multipart, {
-		limits: {
-			fileSize: env.UPLOAD_MAX_SIZE,
-			files: 10, // Max 10 files per request
-		},
-	});
+  app.register(cookie, {
+    secret: env.COOKIE_SECRET,
+    parseOptions: {
+      httpOnly: true,
+      secure: env.SECURE_COOKIES,
+      sameSite: "lax",
+      path: "/",
+    },
+  });
 
-	const userRepository = new PrismaUserRepository();
-	const auctionRepository = new PrismaAuctionRepository();
-	const imageRepository = new PrismaImageRepository();
-	const storageService = new CloudinaryStorage();
-	const passwordHasher = new BunPasswordHasher();
-	const tokenService = new FastifyTokenService(app, env.JWT_EXPIRES_IN, env.JWT_REFRESH_EXPIRES_IN);
+  // Global rate limiting: 100 requests per 15 minutes per IP
+  app.register(rateLimit, {
+    max: 100,
+    timeWindow: "15 minutes",
+    keyGenerator: (request) => request.ip,
+    addHeaders: {
+      "x-ratelimit-limit": true,
+      "x-ratelimit-remaining": true,
+      "x-ratelimit-reset": true,
+      "retry-after": true,
+    },
+  });
 
-	const registerController = new RegisterController(
-		new RegisterUserUseCase(userRepository, passwordHasher)
-	);
-	const loginController = new LoginController(
-		new LoginUserUseCase(new AuthenticateUserUseCase(userRepository, passwordHasher), tokenService)
-	);
+  app.register(multipart, {
+    limits: {
+      fileSize: env.UPLOAD_MAX_SIZE,
+      files: 10, // Max 10 files per request
+    },
+  });
 
-	const listAuctionsController = new ListOpenAuctionsController(
-		new ListOpenAuctionsUseCase(auctionRepository)
-	);
-	const getAuctionByIdController = new GetAuctionByIdController(
-		new GetAuctionByIdUseCase(auctionRepository)
-	);
-	const createAuctionController = new CreateAuctionController(
-		new CreateAuctionUseCase(auctionRepository)
-	);
-	const closeAuctionController = new CloseAuctionController(
-		new CloseAuctionUseCase(auctionRepository)
-	);
-	const placeBidController = new PlaceBidController(new PlaceBidUseCase(auctionRepository));
+  // Permissions-Policy: disable sensitive APIs not used by the application
+  app.addHook("onSend", async (_request, reply) => {
+    reply.header(
+      "Permissions-Policy",
+      "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+    );
+  });
 
-	// Image controllers
-	const uploadImagesController = new UploadAuctionImagesController(
-		new UploadAuctionImagesUseCase(
-			imageRepository,
-			auctionRepository,
-			storageService,
-			env.UPLOAD_MAX_SIZE
-		)
-	);
-	const getImagesController = new GetAuctionImagesController(imageRepository, storageService);
-	const deleteImageController = new DeleteAuctionImageController(
-		new DeleteAuctionImageUseCase(imageRepository, auctionRepository, storageService)
-	);
-	const reorderImagesController = new ReorderAuctionImagesController(
-		new ReorderAuctionImagesUseCase(imageRepository, auctionRepository)
-	);
+  // Cache-Control for API responses: prevent caching of sensitive/dynamic data
+  app.addHook("onSend", async (_request, reply) => {
+    const current = reply.getHeader("cache-control");
+    if (!current) {
+      reply.header(
+        "Cache-Control",
+        "no-store, no-cache, must-revalidate, proxy-revalidate"
+      );
+      reply.header("Pragma", "no-cache");
+      reply.header("Expires", "0");
+    }
+  });
 
-	// Helper to set auth cookies
-	function setAuthCookies(
-		reply: FastifyReply,
-		accessToken: string,
-		refreshToken: string
-	) {
-		reply.setCookie(ACCESS_TOKEN_COOKIE, accessToken, {
-			httpOnly: true,
-			secure: env.SECURE_COOKIES,
-			sameSite: "lax",
-			path: "/",
-			maxAge: 900, // 15 minutes
-		});
-		reply.setCookie(REFRESH_TOKEN_COOKIE, refreshToken, {
-			httpOnly: true,
-			secure: env.SECURE_COOKIES,
-			sameSite: "lax",
-			path: "/",
-			maxAge: 604800, // 7 days
-		});
-	}
+  const userRepository = new PrismaUserRepository();
+  const auctionRepository = new PrismaAuctionRepository();
+  const imageRepository = new PrismaImageRepository();
+  const storageService = new CloudinaryStorage();
+  const passwordHasher = new BunPasswordHasher();
+  const tokenService = new FastifyTokenService(app, env.JWT_EXPIRES_IN, env.JWT_REFRESH_EXPIRES_IN);
 
-	// Helper to clear auth cookies
-	function clearAuthCookies(reply: FastifyReply) {
-		reply.clearCookie(ACCESS_TOKEN_COOKIE, { path: "/" });
-		reply.clearCookie(REFRESH_TOKEN_COOKIE, { path: "/" });
-	}
+  const registerController = new RegisterController(
+    new RegisterUserUseCase(userRepository, passwordHasher)
+  );
+  const loginController = new LoginController(
+    new LoginUserUseCase(new AuthenticateUserUseCase(userRepository, passwordHasher), tokenService)
+  );
 
-	// Custom authentication hook that reads from cookie
-	// Note: @fastify/jwt already decorates request with 'user', so we don't need decorateRequest here
-	app.addHook("onRequest", async (request, reply) => {
-		const accessToken = request.cookies[ACCESS_TOKEN_COOKIE];
-		if (!accessToken) {
-			return;
-		}
+  const listAuctionsController = new ListOpenAuctionsController(
+    new ListOpenAuctionsUseCase(auctionRepository)
+  );
+  const getAuctionByIdController = new GetAuctionByIdController(
+    new GetAuctionByIdUseCase(auctionRepository)
+  );
+  const createAuctionController = new CreateAuctionController(
+    new CreateAuctionUseCase(auctionRepository)
+  );
+  const closeAuctionController = new CloseAuctionController(
+    new CloseAuctionUseCase(auctionRepository)
+  );
+  const placeBidController = new PlaceBidController(new PlaceBidUseCase(auctionRepository));
 
-		try {
-			const decoded = await app.jwt.verify(accessToken) as { sub: string; email: string; role: string };
-			request.user = {
-				sub: decoded.sub,
-				email: decoded.email,
-				role: decoded.role as AuthenticatedUser["role"],
-			};
-		} catch {
-			// Token invalid or expired, clear the cookie
-			reply.clearCookie(ACCESS_TOKEN_COOKIE, { path: "/" });
-		}
-	});
+  // Image controllers
+  const uploadImagesController = new UploadAuctionImagesController(
+    new UploadAuctionImagesUseCase(
+      imageRepository,
+      auctionRepository,
+      storageService,
+      env.UPLOAD_MAX_SIZE
+    )
+  );
+  const getImagesController = new GetAuctionImagesController(imageRepository, storageService);
+  const deleteImageController = new DeleteAuctionImageController(
+    new DeleteAuctionImageUseCase(imageRepository, auctionRepository, storageService)
+  );
+  const reorderImagesController = new ReorderAuctionImagesController(
+    new ReorderAuctionImagesUseCase(imageRepository, auctionRepository)
+  );
 
-	app.get("/health", async () => ({
-		status: "ok",
-		timestamp: new Date().toISOString(),
-	}));
+  // Helper to set auth cookies
+  function setAuthCookies(
+    reply: FastifyReply,
+    accessToken: string,
+    refreshToken: string
+  ) {
+    reply.setCookie(ACCESS_TOKEN_COOKIE, accessToken, {
+      httpOnly: true,
+      secure: env.SECURE_COOKIES,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 900, // 15 minutes
+    });
+    reply.setCookie(REFRESH_TOKEN_COOKIE, refreshToken, {
+      httpOnly: true,
+      secure: env.SECURE_COOKIES,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 604800, // 7 days
+    });
+  }
 
-	app.post("/auth/register", {
-		config: {
-			rateLimit: {
-				max: 5,
-				timeWindow: "15 minutes",
-				keyGenerator: (request) => (request.body as { email?: string })?.email || request.ip,
-			},
-		},
-	}, async (request, reply) => {
-		const body = registerSchema.parse(request.body);
-		const user = await registerController.handle(body);
-		return reply.status(201).send({ data: user });
-	});
+  // Helper to clear auth cookies
+  function clearAuthCookies(reply: FastifyReply) {
+    reply.clearCookie(ACCESS_TOKEN_COOKIE, { path: "/" });
+    reply.clearCookie(REFRESH_TOKEN_COOKIE, { path: "/" });
+  }
 
-	app.post("/auth/login", {
-		config: {
-			rateLimit: {
-				max: 5,
-				timeWindow: "15 minutes",
-				keyGenerator: (request) => (request.body as { email?: string })?.email || request.ip,
-			},
-		},
-	}, async (request, reply) => {
-		const body = loginSchema.parse(request.body);
-		const { accessToken, refreshToken, user } = await loginController.handle(body);
-		setAuthCookies(reply, accessToken, refreshToken);
-		return { data: { user } };
-	});
+  // Custom authentication hook that reads from cookie
+  // Note: @fastify/jwt already decorates request with 'user', so we don't need decorateRequest here
+  app.addHook("onRequest", async (request, reply) => {
+    const accessToken = request.cookies[ACCESS_TOKEN_COOKIE];
+    if (!accessToken) {
+      return;
+    }
 
-	app.post("/auth/refresh", async (request, reply) => {
-		const refreshToken = request.cookies[REFRESH_TOKEN_COOKIE];
-		if (!refreshToken) {
-			return reply.status(401).send({ error: "Refresh token não encontrado" });
-		}
+    try {
+      const decoded = await app.jwt.verify(accessToken) as { sub: string; email: string; role: string };
+      request.user = {
+        sub: decoded.sub,
+        email: decoded.email,
+        role: decoded.role as AuthenticatedUser["role"],
+      };
+    } catch {
+      // Token invalid or expired, clear the cookie
+      reply.clearCookie(ACCESS_TOKEN_COOKIE, { path: "/" });
+    }
+  });
 
-		try {
-			const decoded = await app.jwt.verify(refreshToken) as { sub: string; email: string; role: string };
-			const accessToken = await tokenService.signAccessToken({
-				sub: decoded.sub,
-				email: decoded.email,
-				role: decoded.role as "USER" | "ADMIN",
-			});
-			const newRefreshToken = await tokenService.signRefreshToken({
-				sub: decoded.sub,
-				email: decoded.email,
-				role: decoded.role as "USER" | "ADMIN",
-			});
-			setAuthCookies(reply, accessToken, newRefreshToken);
-			return { data: { user: { id: decoded.sub, email: decoded.email, role: decoded.role } } };
-		} catch {
-			clearAuthCookies(reply);
-			return reply.status(401).send({ error: "Refresh token inválido" });
-		}
-	});
+  app.get("/health", async () => ({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+  }));
 
-	app.post("/auth/logout", async (request, reply) => {
-		clearAuthCookies(reply);
-		return { data: { message: "Logout realizado com sucesso" } };
-	});
+  app.post("/auth/register", {
+    config: {
+      rateLimit: {
+        max: 5,
+        timeWindow: "15 minutes",
+        keyGenerator: (request) => (request.body as { email?: string })?.email || request.ip,
+      },
+    },
+  }, async (request, reply) => {
+    const body = registerSchema.parse(request.body);
+    const user = await registerController.handle(body);
+    return reply.status(201).send({ data: user });
+  });
 
-	app.get("/auth/me", async (request, reply) => {
-		const accessToken = request.cookies[ACCESS_TOKEN_COOKIE];
-		if (!accessToken) {
-			return reply.status(401).send({ error: "Não autenticado" });
-		}
+  app.post("/auth/login", {
+    config: {
+      rateLimit: {
+        max: 5,
+        timeWindow: "15 minutes",
+        keyGenerator: (request) => (request.body as { email?: string })?.email || request.ip,
+      },
+    },
+  }, async (request, reply) => {
+    const body = loginSchema.parse(request.body);
+    const { accessToken, refreshToken, user } = await loginController.handle(body);
+    setAuthCookies(reply, accessToken, refreshToken);
+    return { data: { user } };
+  });
 
-		try {
-			const decoded = await app.jwt.verify(accessToken) as { sub: string; email: string; role: string };
-			return {
-				data: {
-					user: {
-						id: decoded.sub,
-						email: decoded.email,
-						role: decoded.role,
-					},
-				},
-			};
-		} catch {
-			return reply.status(401).send({ error: "Token inválido" });
-		}
-	});
+  app.post("/auth/refresh", async (request, reply) => {
+    const refreshToken = request.cookies[REFRESH_TOKEN_COOKIE];
+    if (!refreshToken) {
+      return reply.status(401).send({ error: "Refresh token não encontrado" });
+    }
 
-	app.get("/auctions", async () => {
-		const auctions = await listAuctionsController.handle();
-		// Fetch images for each auction
-		const auctionsWithImages = await Promise.all(
-			auctions.map(async (auction) => ({
-				...auction,
-				images: await getImagesController.handle(auction.id),
-			}))
-		);
-		return { data: auctionsWithImages };
-	});
+    try {
+      const decoded = await app.jwt.verify(refreshToken) as { sub: string; email: string; role: string };
+      const accessToken = await tokenService.signAccessToken({
+        sub: decoded.sub,
+        email: decoded.email,
+        role: decoded.role as "USER" | "ADMIN",
+      });
+      const newRefreshToken = await tokenService.signRefreshToken({
+        sub: decoded.sub,
+        email: decoded.email,
+        role: decoded.role as "USER" | "ADMIN",
+      });
+      setAuthCookies(reply, accessToken, newRefreshToken);
+      return { data: { user: { id: decoded.sub, email: decoded.email, role: decoded.role } } };
+    } catch {
+      clearAuthCookies(reply);
+      return reply.status(401).send({ error: "Refresh token inválido" });
+    }
+  });
 
-	app.get("/auctions/:auctionId", async (request) => {
-		const params = auctionIdSchema.parse(request.params);
-		const auction = await getAuctionByIdController.handle(params.auctionId);
-		const images = await getImagesController.handle(params.auctionId);
-		return { data: { ...auction, images } };
-	});
+  app.post("/auth/logout", async (request, reply) => {
+    clearAuthCookies(reply);
+    return { data: { message: "Logout realizado com sucesso" } };
+  });
 
-	app.post("/auctions", async (request, reply) => {
-		if (!request.user) {
-			return reply.status(401).send({ error: "Não autenticado" });
-		}
-		const body = createAuctionSchema.parse(request.body);
+  app.get("/auth/me", async (request, reply) => {
+    const accessToken = request.cookies[ACCESS_TOKEN_COOKIE];
+    if (!accessToken) {
+      return reply.status(401).send({ error: "Não autenticado" });
+    }
 
-		const auction = await createAuctionController.handle({
-			...body,
-			sellerId: request.user.sub,
-		});
+    try {
+      const decoded = await app.jwt.verify(accessToken) as { sub: string; email: string; role: string };
+      return {
+        data: {
+          user: {
+            id: decoded.sub,
+            email: decoded.email,
+            role: decoded.role,
+          },
+        },
+      };
+    } catch {
+      return reply.status(401).send({ error: "Token inválido" });
+    }
+  });
 
-		return reply.status(201).send({ data: auction });
-	});
+  app.get("/auctions", async () => {
+    const auctions = await listAuctionsController.handle();
+    // Fetch images for each auction
+    const auctionsWithImages = await Promise.all(
+      auctions.map(async (auction) => ({
+        ...auction,
+        images: await getImagesController.handle(auction.id),
+      }))
+    );
+    return { data: auctionsWithImages };
+  });
 
-	app.patch("/auctions/:auctionId/close", async (request, reply) => {
-		if (!request.user) {
-			return reply.status(401).send({ error: "Não autenticado" });
-		}
-		const params = auctionIdSchema.parse(request.params);
+  app.get("/auctions/:auctionId", async (request) => {
+    const params = auctionIdSchema.parse(request.params);
+    const auction = await getAuctionByIdController.handle(params.auctionId);
+    const images = await getImagesController.handle(params.auctionId);
+    return { data: { ...auction, images } };
+  });
 
-		await closeAuctionController.handle({
-			auctionId: params.auctionId,
-			userId: request.user.sub,
-			isAdmin: request.user.role === "ADMIN",
-		});
+  app.post("/auctions", async (request, reply) => {
+    if (!request.user) {
+      return reply.status(401).send({ error: "Não autenticado" });
+    }
+    const body = createAuctionSchema.parse(request.body);
 
-		return reply.status(204).send();
-	});
+    const auction = await createAuctionController.handle({
+      ...body,
+      sellerId: request.user.sub,
+    });
 
-	app.post("/auctions/:auctionId/bids", async (request, reply) => {
-		if (!request.user) {
-			return reply.status(401).send({ error: "Não autenticado" });
-		}
+    return reply.status(201).send({ data: auction });
+  });
 
-		const params = auctionIdSchema.parse(request.params);
-		const body = placeBidSchema.parse(request.body);
+  app.patch("/auctions/:auctionId/close", async (request, reply) => {
+    if (!request.user) {
+      return reply.status(401).send({ error: "Não autenticado" });
+    }
+    const params = auctionIdSchema.parse(request.params);
 
-		const result = await placeBidController.handle({
-			auctionId: params.auctionId,
-			bidderId: request.user.sub,
-			amount: body.amount,
-		});
+    await closeAuctionController.handle({
+      auctionId: params.auctionId,
+      userId: request.user.sub,
+      isAdmin: request.user.role === "ADMIN",
+    });
 
-		return reply.status(201).send({ data: result });
-	});
+    return reply.status(204).send();
+  });
 
-	// Image routes
-	app.get("/auctions/:auctionId/images", async (request) => {
-		const params = auctionIdSchema.parse(request.params);
-		return { data: await getImagesController.handle(params.auctionId) };
-	});
+  app.post("/auctions/:auctionId/bids", async (request, reply) => {
+    if (!request.user) {
+      return reply.status(401).send({ error: "Não autenticado" });
+    }
 
-	app.post("/auctions/:auctionId/images", async (request, reply) => {
-		if (!request.user) {
-			return reply.status(401).send({ error: "Não autenticado" });
-		}
-		const params = auctionIdSchema.parse(request.params);
+    const params = auctionIdSchema.parse(request.params);
+    const body = placeBidSchema.parse(request.body);
 
-		const parts = request.parts();
-		const files: Array<{ buffer: Buffer; filename: string; mimeType: string }> = [];
+    const result = await placeBidController.handle({
+      auctionId: params.auctionId,
+      bidderId: request.user.sub,
+      amount: body.amount,
+    });
 
-		for await (const part of parts) {
-			if (part.type === "file") {
-				const buffer = await part.toBuffer();
-				// Validate MIME type
-				if (!ALLOWED_MIME_TYPES.includes(part.mimetype as typeof ALLOWED_MIME_TYPES[number])) {
-					return reply.status(400).send({
-						error: `Tipo de arquivo não permitido: ${part.mimetype}. Use JPEG, PNG ou WebP`,
-					});
-				}
-				files.push({
-					buffer,
-					filename: part.filename,
-					mimeType: part.mimetype,
-				});
-			}
-		}
+    return reply.status(201).send({ data: result });
+  });
 
-		if (files.length === 0) {
-			return reply.status(400).send({ error: "Nenhum arquivo enviado" });
-		}
+  // Image routes
+  app.get("/auctions/:auctionId/images", async (request) => {
+    const params = auctionIdSchema.parse(request.params);
+    return { data: await getImagesController.handle(params.auctionId) };
+  });
 
-		const result = await uploadImagesController.handle({
-			auctionId: params.auctionId,
-			files,
-			userId: request.user.sub,
-		});
+  app.post("/auctions/:auctionId/images", async (request, reply) => {
+    if (!request.user) {
+      return reply.status(401).send({ error: "Não autenticado" });
+    }
+    const params = auctionIdSchema.parse(request.params);
 
-		return reply.status(201).send({ data: result });
-	});
+    const parts = request.parts();
+    const files: Array<{ buffer: Buffer; filename: string; mimeType: string }> = [];
 
-	app.delete("/auctions/:auctionId/images/:imageId", async (request, reply) => {
-		if (!request.user) {
-			return reply.status(401).send({ error: "Não autenticado" });
-		}
-		const params = imageIdSchema.parse(request.params);
+    for await (const part of parts) {
+      if (part.type === "file") {
+        const buffer = await part.toBuffer();
+        // Validate MIME type
+        if (!ALLOWED_MIME_TYPES.includes(part.mimetype as typeof ALLOWED_MIME_TYPES[number])) {
+          return reply.status(400).send({
+            error: `Tipo de arquivo não permitido: ${part.mimetype}. Use JPEG, PNG ou WebP`,
+          });
+        }
+        files.push({
+          buffer,
+          filename: part.filename,
+          mimeType: part.mimetype,
+        });
+      }
+    }
 
-		await deleteImageController.handle({
-			auctionId: params.auctionId,
-			imageId: params.imageId,
-			userId: request.user.sub,
-		});
+    if (files.length === 0) {
+      return reply.status(400).send({ error: "Nenhum arquivo enviado" });
+    }
 
-		return reply.status(204).send();
-	});
+    const result = await uploadImagesController.handle({
+      auctionId: params.auctionId,
+      files,
+      userId: request.user.sub,
+    });
 
-	app.patch("/auctions/:auctionId/images/reorder", async (request, reply) => {
-		if (!request.user) {
-			return reply.status(401).send({ error: "Não autenticado" });
-		}
-		const params = auctionIdSchema.parse(request.params);
-		const body = reorderImagesSchema.parse(request.body);
+    return reply.status(201).send({ data: result });
+  });
 
-		await reorderImagesController.handle({
-			auctionId: params.auctionId,
-			userId: request.user.sub,
-			positions: body.positions,
-		});
+  app.delete("/auctions/:auctionId/images/:imageId", async (request, reply) => {
+    if (!request.user) {
+      return reply.status(401).send({ error: "Não autenticado" });
+    }
+    const params = imageIdSchema.parse(request.params);
 
-		return reply.status(204).send();
-	});
+    await deleteImageController.handle({
+      auctionId: params.auctionId,
+      imageId: params.imageId,
+      userId: request.user.sub,
+    });
 
-	return app;
+    return reply.status(204).send();
+  });
+
+  app.patch("/auctions/:auctionId/images/reorder", async (request, reply) => {
+    if (!request.user) {
+      return reply.status(401).send({ error: "Não autenticado" });
+    }
+    const params = auctionIdSchema.parse(request.params);
+    const body = reorderImagesSchema.parse(request.body);
+
+    await reorderImagesController.handle({
+      auctionId: params.auctionId,
+      userId: request.user.sub,
+      positions: body.positions,
+    });
+
+    return reply.status(204).send();
+  });
+
+  return app;
 }
