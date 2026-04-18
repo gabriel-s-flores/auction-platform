@@ -7,5 +7,6 @@ export interface TokenPayload {
 }
 
 export interface TokenService {
-  sign: (payload: TokenPayload) => Promise<string>;
+  signAccessToken: (payload: TokenPayload) => Promise<string>;
+  signRefreshToken: (payload: TokenPayload) => Promise<string>;
 }

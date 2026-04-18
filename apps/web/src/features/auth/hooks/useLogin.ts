@@ -1,16 +1,5 @@
-import type { LoginRequest } from "@auction/shared-types";
-import { useMutation } from "@tanstack/react-query";
+import type { LoginPayload,LoginRequest } from "@auction/shared-types"; 
+import { useMutation } from "@tanstack/react-query"; 
 
-import { authService } from "@/features/auth/services/auth.service";
-import { useAuth } from "@/shared/auth/auth-context";
-
-export function useLogin() {
-  const { login } = useAuth();
-
-  return useMutation({
-    mutationFn: (payload: LoginRequest) => authService.login(payload),
-    onSuccess: (result: { accessToken: string }) => {
-      login(result.accessToken);
-    }
-  });
-}
+import { authService } from "@/features/auth/services/auth.service"; 
+import { useAuth } from "@/shared/auth/auth-context"; export function useLogin() { const { login } = useAuth(); return useMutation({ mutationFn: (payload: LoginRequest) => authService.login(payload), onSuccess: (result: LoginPayload) => { login(result.user); }, }); }

@@ -1,11 +1,3 @@
-import type { TokenPayload, TokenService } from "#application/services/token-service";
+import type { FastifyInstance } from "fastify"; 
 
-type Signer = (payload: TokenPayload) => Promise<string>;
-
-export class FastifyTokenService implements TokenService {
-  constructor(private readonly signer: Signer) { }
-
-  async sign(payload: TokenPayload): Promise<string> {
-    return this.signer(payload);
-  }
-}
+import type { TokenPayload, TokenService } from "#application/services/token-service"; export class FastifyTokenService implements TokenService { constructor( private readonly app: FastifyInstance, private readonly accessExpiresIn: string, private readonly refreshExpiresIn: string ) { } async signAccessToken(payload: TokenPayload): Promise<string> { return this.app.jwt.sign(payload, { expiresIn: this.accessExpiresIn }); } async signRefreshToken(payload: TokenPayload): Promise<string> { return this.app.jwt.sign(payload, { expiresIn: this.refreshExpiresIn }); } }
