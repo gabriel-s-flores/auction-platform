@@ -55,6 +55,26 @@ export interface CreateAuctionResponse {
   data: AuctionDto;
 }
 
+export type SubmitAuctionEditRequest =
+  | {
+      editType: "TITLE";
+      title: string;
+    }
+  | {
+      editType: "DESCRIPTION";
+      description: string | null;
+    };
+
+export interface SubmitAuctionEditResponse {
+  data: {
+    id: string;
+    auctionId: string;
+    editType: EditType;
+    status: "PENDING_APPROVAL";
+    createdAt: string;
+  };
+}
+
 export interface PlaceBidRequest {
   amount: number;
 }

@@ -1,4 +1,5 @@
 import type { ActivityLogRepository } from "#domain/repositories/activity-log-repository";
+import type { AdminNotificationReadRepository } from "#domain/repositories/admin-notification-read-repository";
 
 interface ActorSummary {
   id: string;
@@ -20,6 +21,8 @@ export interface AdminNotificationOutput {
   entityId: string;
   message: string;
   timestamp: string;
+  isRead: boolean;
+  readAt: string | null;
   actor?: ActorSummary;
 }
 
@@ -89,10 +92,18 @@ function mapEntityType(entityType: string): AdminNotificationOutput["entityType"
 }
 
 export class ListAdminNotificationsUseCase {
-  constructor(private readonly activityLogRepository: ActivityLogRepository) {}
+  constructor(
+    private readonly activityLogRepository: ActivityLogRepository,
+    private readonly adminNotificationReadRepository: AdminNotificationReadRepository
+  ) {}
 
-  async execute(limit = 20): Promise<AdminNotificationOutput[]> {
+  async execute(adminId: string, limit = 20): Promise<AdminNotificationOutput[]> {
     const logs = await this.activityLogRepository.listRecentForAdminNotifications({ limit });
+    const reads = await this.adminNotificationReadRepository.listByAdminAndNotificationIds({
+      adminId,
+      notificationIds: logs.map((log) => log.id),
+    });
+    const readByNotificationId = new Map(reads.map((read) => [read.activityLogId, read]));
     const notifications: AdminNotificationOutput[] = [];
 
     for (const log of logs) {
@@ -108,6 +119,7 @@ export class ListAdminNotificationsUseCase {
             name: log.actorName,
           }
         : undefined;
+      const readState = readByNotificationId.get(log.id);
 
       notifications.push({
         id: log.id,
@@ -116,6 +128,8 @@ export class ListAdminNotificationsUseCase {
         entityId: log.entityId,
         message: buildNotificationMessage(log),
         timestamp: log.createdAt.toISOString(),
+        isRead: readState?.isRead ?? false,
+        readAt: readState?.readAt?.toISOString() ?? null,
         actor,
       });
     }

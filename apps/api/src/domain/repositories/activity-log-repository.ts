@@ -34,6 +34,7 @@ export interface ListAdminNotificationsInput {
 
 export interface ActivityLogRepository {
   create(input: CreateActivityLogInput): Promise<ActivityLog>;
+  findById(id: string): Promise<ActivityLog | null>;
   list(input: ListActivityLogsInput): Promise<{ data: ActivityLog[]; total: number }>;
   listAll(input: ExportActivityLogsInput): Promise<ActivityLog[]>;
   listRecentForAdminNotifications(input: ListAdminNotificationsInput): Promise<ActivityLog[]>;

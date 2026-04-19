@@ -110,6 +110,14 @@ export const adminService = {
     return response.data;
   },
 
+  async markNotificationAsRead(notificationId: string): Promise<void> {
+    await httpClient.patch(`/admin/notifications/${notificationId}/read`);
+  },
+
+  async markNotificationAsUnread(notificationId: string): Promise<void> {
+    await httpClient.patch(`/admin/notifications/${notificationId}/unread`);
+  },
+
   async approvePendingEdit(editId: string): Promise<void> {
     await httpClient.patch(`/admin/edits/${editId}/approve`);
   },

@@ -92,6 +92,22 @@ export class PrismaActivityLogRepository implements ActivityLogRepository {
  return mapActivityLog(log);
  }
 
+ async findById(id: string): Promise<ActivityLog | null> {
+ const log = await prisma.activityLog.findUnique({
+ where: { id },
+ include: {
+ actor: {
+ select: {
+ name: true,
+ email: true
+ }
+ }
+ }
+ });
+
+ return log ? mapActivityLog(log) : null;
+ }
+
  async list(input: ListActivityLogsInput): Promise<{ data: ActivityLog[]; total: number }> {
  const page = input.page ?? 1;
  const limit = input.limit ?? 20;

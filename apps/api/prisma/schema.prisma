@@ -48,6 +48,7 @@ model User {
  submittedEdits PendingAuctionEdit[] @relation("SubmittedEdits")
  reviewedEdits PendingAuctionEdit[] @relation("ReviewedEdits")
  activityLogs ActivityLog[]
+  adminNotificationReads AdminNotificationRead[]
 
  @@index([role])
  @@index([isBanned])
@@ -154,10 +155,29 @@ model ActivityLog {
 
  // Relacionamentos
  actor User? @relation(fields: [actorId], references: [id])
+  notificationReads AdminNotificationRead[]
 
  @@index([action])
  @@index([entityType, entityId])
  @@index([actorId])
  @@index([createdAt])
  @@map("activity_logs")
+}
+
+model AdminNotificationRead {
+ id String @id @default(uuid()) @db.Uuid
+ activityLogId String @db.Uuid
+ adminId String @db.Uuid
+ isRead Boolean @default(true)
+ readAt DateTime?
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+
+ activityLog ActivityLog @relation(fields: [activityLogId], references: [id], onDelete: Cascade)
+ admin User @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+ @@unique([activityLogId, adminId])
+ @@index([adminId, isRead])
+ @@index([activityLogId])
+ @@map("admin_notification_reads")
 }

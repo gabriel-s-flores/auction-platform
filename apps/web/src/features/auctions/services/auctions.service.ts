@@ -9,6 +9,8 @@ import type {
   PlaceBidRequest,
   PlaceBidResponse,
   ReorderImagesRequest,
+  SubmitAuctionEditRequest,
+  SubmitAuctionEditResponse,
   UploadImagesResponse,
 } from "@auction/shared-types";
 
@@ -31,6 +33,18 @@ async function create(payload: CreateAuctionRequest): Promise<AuctionDto> {
     "/auctions",
     payload
   );
+  return data.data;
+}
+
+async function submitEdit(
+  auctionId: string,
+  payload: SubmitAuctionEditRequest
+): Promise<SubmitAuctionEditResponse["data"]> {
+  const { data } = await httpClient.post<SubmitAuctionEditResponse>(
+    `/auctions/${auctionId}/edits`,
+    payload
+  );
+
   return data.data;
 }
 
@@ -101,6 +115,7 @@ export const auctionsService = {
   listOpen,
   getById,
   create,
+  submitEdit,
   placeBid,
   close,
   getImages,

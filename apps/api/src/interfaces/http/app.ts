@@ -1,4 +1,6 @@
 /* eslint-disable sonarjs/deprecation */
+import { randomUUID } from "node:crypto";
+
 import compress from "@fastify/compress";
 import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
@@ -28,6 +30,8 @@ import { ListDashboardRecentAuctionsUseCase } from "#application/use-cases/admin
 import { ListPendingAuctionsUseCase } from "#application/use-cases/admin/list-pending-auctions.use-case";
 import { ListPendingEditsUseCase } from "#application/use-cases/admin/list-pending-edits.use-case";
 import { ListUsersUseCase } from "#application/use-cases/admin/list-users.use-case";
+import { MarkAdminNotificationReadUseCase } from "#application/use-cases/admin/mark-admin-notification-read.use-case";
+import { MarkAdminNotificationUnreadUseCase } from "#application/use-cases/admin/mark-admin-notification-unread.use-case";
 import { PromoteUserUseCase } from "#application/use-cases/admin/promote-user.use-case";
 import { RejectAuctionUseCase } from "#application/use-cases/admin/reject-auction.use-case";
 import { RejectPendingEditUseCase } from "#application/use-cases/admin/reject-pending-edit.use-case";
@@ -42,9 +46,11 @@ import { LoginUserUseCase } from "#application/use-cases/login-user.use-case";
 import { PlaceBidUseCase } from "#application/use-cases/place-bid.use-case";
 import { RegisterUserUseCase } from "#application/use-cases/register-user.use-case";
 import { ReorderAuctionImagesUseCase } from "#application/use-cases/reorder-auction-images.use-case";
+import { SubmitAuctionEditUseCase } from "#application/use-cases/submit-auction-edit.use-case";
 import { UploadAuctionImagesUseCase } from "#application/use-cases/upload-auction-images.use-case";
 import { env } from "#infrastructure/config/env";
 import { PrismaActivityLogRepository } from "#infrastructure/repositories/prisma-activity-log.repository";
+import { PrismaAdminNotificationReadRepository } from "#infrastructure/repositories/prisma-admin-notification-read.repository";
 import { PrismaAuctionRepository } from "#infrastructure/repositories/prisma-auction.repository";
 import { PrismaImageRepository } from "#infrastructure/repositories/prisma-image.repository";
 import { PrismaPendingEditRepository } from "#infrastructure/repositories/prisma-pending-edit.repository";
@@ -67,6 +73,8 @@ import { ListDashboardRecentAuctionsController } from "#interfaces/http/controll
 import { ListPendingAuctionsController } from "#interfaces/http/controllers/admin/list-pending-auctions.controller";
 import { ListPendingEditsController } from "#interfaces/http/controllers/admin/list-pending-edits.controller";
 import { ListUsersController } from "#interfaces/http/controllers/admin/list-users.controller";
+import { MarkAdminNotificationReadController } from "#interfaces/http/controllers/admin/mark-admin-notification-read.controller";
+import { MarkAdminNotificationUnreadController } from "#interfaces/http/controllers/admin/mark-admin-notification-unread.controller";
 import { PromoteUserController } from "#interfaces/http/controllers/admin/promote-user.controller";
 import { RejectAuctionController } from "#interfaces/http/controllers/admin/reject-auction.controller";
 import { RejectPendingEditController } from "#interfaces/http/controllers/admin/reject-pending-edit.controller";
@@ -75,6 +83,7 @@ import { CloseAuctionController } from "#interfaces/http/controllers/auctions/cl
 import { CreateAuctionController } from "#interfaces/http/controllers/auctions/create-auction.controller";
 import { GetAuctionByIdController } from "#interfaces/http/controllers/auctions/get-auction-by-id.controller";
 import { ListOpenAuctionsController } from "#interfaces/http/controllers/auctions/list-open-auctions.controller";
+import { SubmitAuctionEditController } from "#interfaces/http/controllers/auctions/submit-auction-edit.controller";
 import { LoginController } from "#interfaces/http/controllers/auth/login.controller";
 import { RegisterController } from "#interfaces/http/controllers/auth/register.controller";
 import { PlaceBidController } from "#interfaces/http/controllers/bids/place-bid.controller";
@@ -269,6 +278,7 @@ export function buildApp() {
  const imageRepository = new PrismaImageRepository();
  const pendingEditRepository = new PrismaPendingEditRepository();
  const activityLogRepository = new PrismaActivityLogRepository();
+ const adminNotificationReadRepository = new PrismaAdminNotificationReadRepository();
  const storageService = new CloudinaryStorage();
  const passwordHasher = new BunPasswordHasher();
  const tokenService = new FastifyTokenService(app, env.JWT_EXPIRES_IN, env.JWT_REFRESH_EXPIRES_IN);
@@ -289,6 +299,9 @@ export function buildApp() {
  );
  const createAuctionController = new CreateAuctionController(
  new CreateAuctionUseCase(auctionRepository)
+ );
+ const submitAuctionEditController = new SubmitAuctionEditController(
+ new SubmitAuctionEditUseCase(auctionRepository, pendingEditRepository, auditService)
  );
  const closeAuctionController = new CloseAuctionController(
  new CloseAuctionUseCase(auctionRepository)
@@ -335,7 +348,7 @@ export function buildApp() {
  new ListActivityLogsUseCase(activityLogRepository)
  );
  const listAdminNotificationsController = new ListAdminNotificationsController(
- new ListAdminNotificationsUseCase(activityLogRepository)
+ new ListAdminNotificationsUseCase(activityLogRepository, adminNotificationReadRepository)
  );
  const listPendingEditsController = new ListPendingEditsController(
  new ListPendingEditsUseCase(pendingEditRepository)
@@ -351,6 +364,12 @@ export function buildApp() {
  );
  const listUsersController = new ListUsersController(
  new ListUsersUseCase(userRepository)
+ );
+ const markAdminNotificationReadController = new MarkAdminNotificationReadController(
+ new MarkAdminNotificationReadUseCase(activityLogRepository, adminNotificationReadRepository)
+ );
+ const markAdminNotificationUnreadController = new MarkAdminNotificationUnreadController(
+ new MarkAdminNotificationUnreadUseCase(activityLogRepository, adminNotificationReadRepository)
  );
  const approveAuctionController = new ApproveAuctionController(
  new ApproveAuctionUseCase(auctionRepository, auditService)
@@ -449,9 +468,34 @@ export function buildApp() {
  },
  }, async (request, reply) => {
  const body = loginSchema.parse(request.body);
+ try {
  const { accessToken, refreshToken, user } = await loginController.handle(body);
  setAuthCookies(reply, accessToken, refreshToken);
+ await auditService.log(
+ "USER_LOGIN",
+ "user",
+ user.id,
+ null,
+ {
+ actorId: user.id,
+ ipAddress: request.ip,
+ userAgent: request.headers["user-agent"],
+ }
+ );
  return { data: { user } };
+ } catch (error) {
+ await auditService.log(
+ "LOGIN_FAILED",
+ "auth_attempt",
+ randomUUID(),
+ { email: body.email },
+ {
+ ipAddress: request.ip,
+ userAgent: request.headers["user-agent"],
+ }
+ );
+ throw error;
+ }
  });
 
  app.post("/auth/refresh", async (request, reply) => {
@@ -481,6 +525,19 @@ export function buildApp() {
  });
 
  app.post("/auth/logout", async (request, reply) => {
+ if (request.user) {
+ await auditService.log(
+ "USER_LOGOUT",
+ "user",
+ request.user.sub,
+ null,
+ {
+ actorId: request.user.sub,
+ ipAddress: request.ip,
+ userAgent: request.headers["user-agent"],
+ }
+ );
+ }
  clearAuthCookies(reply);
  return { data: { message: "Logout realizado com sucesso" } };
  });
@@ -537,7 +594,27 @@ export function buildApp() {
  sellerId: request.user.sub,
  });
 
+ await auditService.log(
+ "AUCTION_CREATED",
+ "auction",
+ auction.id,
+ { title: auction.title },
+ {
+ actorId: request.user.sub,
+ ipAddress: request.ip,
+ userAgent: request.headers["user-agent"],
+ }
+ );
+
  return reply.status(201).send({ data: auction });
+ });
+
+ app.post("/auctions/:auctionId/edits", async (request, reply) => {
+ if (!request.user) {
+ return reply.status(401).send({ error: "Não autenticado" });
+ }
+
+ return submitAuctionEditController.handle(request, reply);
  });
 
  app.patch("/auctions/:auctionId/close", async (request, reply) => {
@@ -551,6 +628,18 @@ export function buildApp() {
  userId: request.user.sub,
   isAdmin: request.user.role === "ADMIN" || request.user.role === "SUPER_ADMIN",
  });
+
+ await auditService.log(
+ "AUCTION_CLOSED",
+ "auction",
+ params.auctionId,
+ null,
+ {
+ actorId: request.user.sub,
+ ipAddress: request.ip,
+ userAgent: request.headers["user-agent"],
+ }
+ );
 
  return reply.status(204).send();
  });
@@ -568,6 +657,21 @@ export function buildApp() {
  bidderId: request.user.sub,
  amount: body.amount,
  });
+
+ await auditService.log(
+ "BID_PLACED",
+ "bid",
+ result.bid.id,
+ {
+ auctionId: params.auctionId,
+ amount: result.bid.amount,
+ },
+ {
+ actorId: request.user.sub,
+ ipAddress: request.ip,
+ userAgent: request.headers["user-agent"],
+ }
+ );
 
  return reply.status(201).send({ data: result });
  });
@@ -614,6 +718,23 @@ export function buildApp() {
  userId: request.user.sub,
  });
 
+ await Promise.all(
+ result.map((image) => auditService.log(
+ "IMAGE_UPLOADED",
+ "image",
+ image.id,
+ {
+ auctionId: params.auctionId,
+ url: image.url,
+ },
+ {
+ actorId: request.user.sub,
+ ipAddress: request.ip,
+ userAgent: request.headers["user-agent"],
+ }
+ ))
+ );
+
  return reply.status(201).send({ data: result });
  });
 
@@ -628,6 +749,20 @@ export function buildApp() {
  imageId: params.imageId,
  userId: request.user.sub,
  });
+
+ await auditService.log(
+ "IMAGE_DELETED",
+ "image",
+ params.imageId,
+ {
+ auctionId: params.auctionId,
+ },
+ {
+ actorId: request.user.sub,
+ ipAddress: request.ip,
+ userAgent: request.headers["user-agent"],
+ }
+ );
 
  return reply.status(204).send();
  });
@@ -673,6 +808,14 @@ export function buildApp() {
  // Admin notifications
  app.get("/admin/notifications", { preHandler: requireAdmin() }, async (request, reply) => {
  return listAdminNotificationsController.handle(request, reply);
+ });
+
+ app.patch("/admin/notifications/:notificationId/read", { preHandler: requireAdmin() }, async (request, reply) => {
+ return markAdminNotificationReadController.handle(request, reply);
+ });
+
+ app.patch("/admin/notifications/:notificationId/unread", { preHandler: requireAdmin() }, async (request, reply) => {
+ return markAdminNotificationUnreadController.handle(request, reply);
  });
 
  // Pending auction edits review

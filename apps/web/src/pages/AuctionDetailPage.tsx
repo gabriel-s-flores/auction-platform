@@ -19,6 +19,7 @@ import { useCloseAuction } from "@/features/auctions/hooks/useCloseAuction";
 import { useDeleteImage } from "@/features/auctions/hooks/useDeleteImage";
 import { usePlaceBid } from "@/features/auctions/hooks/usePlaceBid";
 import { useReorderImages } from "@/features/auctions/hooks/useReorderImages";
+import { useSubmitAuctionEdit } from "@/features/auctions/hooks/useSubmitAuctionEdit";
 import { useUploadImages } from "@/features/auctions/hooks/useUploadImages";
 import { getErrorMessage } from "@/shared/api/get-error-message";
 import { useAuth } from "@/shared/auth/auth-context";
@@ -40,11 +41,15 @@ export function AuctionDetailPage() {
   const uploadImagesMutation = useUploadImages(auctionId);
   const deleteImageMutation = useDeleteImage(auctionId);
   const reorderImagesMutation = useReorderImages(auctionId);
+  const submitAuctionEditMutation = useSubmitAuctionEdit(auctionId);
 
   const [bidAmount, setBidAmount] = useState("");
+  const [titleEditValue, setTitleEditValue] = useState("");
+  const [descriptionEditValue, setDescriptionEditValue] = useState("");
   const [isExpired, setIsExpired] = useState(false);
   const [currentEndsAt, setCurrentEndsAt] = useState<string | null>(null);
   const [showExtensionNotice, setShowExtensionNotice] = useState(false);
+  const [editRequestSuccessMessage, setEditRequestSuccessMessage] = useState<string | null>(null);
 
   // WebSocket integration
   const { extendedPayload, newBidPayload, clearExtension, clearNewBid } = useAuctionRoom(auctionId);
@@ -79,6 +84,15 @@ export function AuctionDetailPage() {
     }
   }, [auctionQuery.data, currentEndsAt]);
 
+  useEffect(() => {
+    if (!auctionQuery.data) {
+      return;
+    }
+
+    setTitleEditValue(auctionQuery.data.title);
+    setDescriptionEditValue(auctionQuery.data.description ?? "");
+  }, [auctionId, auctionQuery.data]);
+
   const minBid = useMemo(() => {
     if (!auctionQuery.data) {
       return 1;
@@ -110,6 +124,23 @@ export function AuctionDetailPage() {
   async function handleDeleteImage(imageId: string): Promise<void> {
     await deleteImageMutation.mutateAsync(imageId);
     void auctionQuery.refetch();
+  }
+
+  async function handleSubmitTitleEdit() {
+    const title = titleEditValue.trim();
+
+    setEditRequestSuccessMessage(null);
+    await submitAuctionEditMutation.mutateAsync({ editType: "TITLE", title });
+    setEditRequestSuccessMessage("Solicitação de alteração de título enviada para revisão.");
+  }
+
+  async function handleSubmitDescriptionEdit() {
+    setEditRequestSuccessMessage(null);
+    await submitAuctionEditMutation.mutateAsync({
+      editType: "DESCRIPTION",
+      description: descriptionEditValue.trim() || null,
+    });
+    setEditRequestSuccessMessage("Solicitação de alteração de descrição enviada para revisão.");
   }
 
   function handleImagesChange(updatedImages: ImageDto[]): void {
@@ -144,6 +175,10 @@ export function AuctionDetailPage() {
   const auction = auctionQuery.data;
   const displayEndsAt = currentEndsAt || auction.endsAt;
   const images: ImageDto[] = auction.images ?? [];
+  const normalizedCurrentDescription = (auction.description ?? "").trim();
+  const normalizedDescriptionEditValue = descriptionEditValue.trim();
+  const isTitleEditChanged = titleEditValue.trim() !== auction.title;
+  const isDescriptionEditChanged = normalizedDescriptionEditValue !== normalizedCurrentDescription;
 
   return (
     <div className="space-y-6">
@@ -183,6 +218,73 @@ export function AuctionDetailPage() {
                   uploadProgress={uploadImagesMutation.progress}
                   isUploading={uploadImagesMutation.isUploading}
                 />
+              </Card>
+            )}
+
+            {isOwner && (
+              <Card className="mt-4 space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">Solicitar edição do leilão</h3>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Envie alterações de título ou descrição para revisão administrativa.
+                  </p>
+                </div>
+
+                {submitAuctionEditMutation.isError ? (
+                  <Alert variant="error">
+                    {getErrorMessage(
+                      submitAuctionEditMutation.error,
+                      "Não foi possível enviar a solicitação de edição"
+                    )}
+                  </Alert>
+                ) : null}
+
+                {editRequestSuccessMessage ? (
+                  <Alert variant="success">{editRequestSuccessMessage}</Alert>
+                ) : null}
+
+                <div className="space-y-3 rounded-xl border border-slate-200 p-4">
+                  <div>
+                    <Label htmlFor="edit-title">Novo título</Label>
+                    <Input
+                      id="edit-title"
+                      value={titleEditValue}
+                      onChange={(event) => setTitleEditValue(event.target.value)}
+                    />
+                  </div>
+
+                  <Button
+                    type="button"
+                    disabled={!isTitleEditChanged || submitAuctionEditMutation.isPending}
+                    onClick={() => {
+                      void handleSubmitTitleEdit();
+                    }}
+                  >
+                    {submitAuctionEditMutation.isPending ? "Enviando..." : "Solicitar alteração de título"}
+                  </Button>
+                </div>
+
+                <div className="space-y-3 rounded-xl border border-slate-200 p-4">
+                  <div>
+                    <Label htmlFor="edit-description">Nova descrição</Label>
+                    <textarea
+                      id="edit-description"
+                      className="mt-1.5 min-h-32 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-hidden transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+                      value={descriptionEditValue}
+                      onChange={(event) => setDescriptionEditValue(event.target.value)}
+                    />
+                  </div>
+
+                  <Button
+                    type="button"
+                    disabled={!isDescriptionEditChanged || submitAuctionEditMutation.isPending}
+                    onClick={() => {
+                      void handleSubmitDescriptionEdit();
+                    }}
+                  >
+                    {submitAuctionEditMutation.isPending ? "Enviando..." : "Solicitar alteração de descrição"}
+                  </Button>
+                </div>
               </Card>
             )}
           </div>

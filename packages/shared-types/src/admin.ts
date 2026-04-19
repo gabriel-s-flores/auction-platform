@@ -245,6 +245,8 @@ export interface AdminNotification {
   entityId: string;
   message: string;
   timestamp: string;
+  isRead: boolean;
+  readAt: string | null;
   actor?: {
     id: string;
     name: string;

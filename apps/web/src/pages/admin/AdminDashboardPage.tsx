@@ -83,7 +83,7 @@ function ActivitySummary({ stats }: { stats: DashboardStats | undefined }) {
         </div>
 
         <div className="rounded-lg border border-dashed border-slate-200 px-4 py-3 text-slate-500">
-          Notificações administrativas entram na próxima fase do painel.
+          Notificações administrativas já estão disponíveis no painel.
         </div>
       </div>
     </Card>
