@@ -3,6 +3,8 @@ import imageCompression from "browser-image-compression";
 import type { ChangeEvent, DragEvent } from "react";
 import { useCallback, useState } from "react";
 
+import { getThumbnailByPreset } from "../utils/image-utils";
+
 export interface ImageUploaderProps {
   images: ImageDto[];
   onChange: (images: ImageDto[]) => void;
@@ -304,7 +306,7 @@ export function ImageUploader({
 
             <div>
               <p className="text-sm font-medium text-slate-700">
-              {getStatusText()}
+                {getStatusText()}
               </p>
               <p className="text-xs text-slate-500 mt-1">
                 JPEG, PNG ou WebP. Máx. {maxSizeMB}MB.
@@ -340,7 +342,7 @@ export function ImageUploader({
               }`}
             >
               <img
-                src={image.thumbnailUrl || image.url}
+                src={getThumbnailByPreset(image.url, "card")}
                 alt={image.alt || `Imagem ${index + 1}`}
                 className="w-full h-full object-cover"
               />

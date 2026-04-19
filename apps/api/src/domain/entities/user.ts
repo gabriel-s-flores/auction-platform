@@ -1,4 +1,4 @@
-export type UserRole = "USER" | "ADMIN";
+export type UserRole = "USER" | "ADMIN" | "SUPER_ADMIN";
 
 export interface User {
   id: string;
@@ -6,6 +6,7 @@ export interface User {
   email: string;
   passwordHash: string;
   role: UserRole;
+  isBanned: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

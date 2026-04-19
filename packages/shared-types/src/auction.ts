@@ -1,4 +1,5 @@
-export type AuctionStatus = "OPEN" | "CLOSED";
+export type AuctionStatus = "PENDING_APPROVAL" | "OPEN" | "CLOSED" | "REJECTED";
+export type EditType = "TITLE" | "DESCRIPTION" | "IMAGES";
 
 export interface ImageDto {
   id: string;
@@ -19,6 +20,9 @@ export interface AuctionDto {
   endsAt: string;
   sellerId: string;
   version: number;
+  rejectionReason: string | null;
+  approvedById: string | null;
+  approvedAt: string | null;
   createdAt: string;
   updatedAt: string;
   images?: ImageDto[];

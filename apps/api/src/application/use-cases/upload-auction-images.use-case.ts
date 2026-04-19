@@ -1,7 +1,14 @@
 import { AppError } from "#application/errors/app-error";
-import { isAllowedMimeType, type StorageService, type UploadResult } from "#application/services/storage-service";
+import {
+  isAllowedMimeType,
+  type StorageService,
+  type UploadResult,
+} from "#application/services/storage-service";
 import type { AuctionRepository } from "#domain/repositories/auction-repository";
-import type { CreateImageInput,ImageRepository } from "#domain/repositories/image-repository";
+import type {
+  CreateImageInput,
+  ImageRepository,
+} from "#domain/repositories/image-repository";
 
 export interface UploadImageInput {
   auctionId: string;
@@ -43,11 +50,16 @@ export class UploadAuctionImagesUseCase {
 
     // Verify ownership
     if (auction.sellerId !== input.userId) {
-      throw new AppError("Você não tem permissão para adicionar imagens a este leilão", 403);
+      throw new AppError(
+        "Você não tem permissão para adicionar imagens a este leilão",
+        403
+      );
     }
 
     // Check current image count
-    const currentImages = await this.imageRepository.findByAuctionId(input.auctionId);
+    const currentImages = await this.imageRepository.findByAuctionId(
+      input.auctionId
+    );
     if (currentImages.length + input.files.length > MAX_IMAGES_PER_AUCTION) {
       throw new AppError(
         `Máximo de ${MAX_IMAGES_PER_AUCTION} imagens por leilão excedido`,
@@ -72,7 +84,8 @@ export class UploadAuctionImagesUseCase {
     }
 
     // Get next position
-    const nextPosition = await this.imageRepository.getNextPosition(input.auctionId);
+    const nextPosition =
+      await this.imageRepository.getNextPosition(input.auctionId);
 
     // Upload files to storage
     const uploadResults: UploadResult[] = [];
@@ -87,23 +100,25 @@ export class UploadAuctionImagesUseCase {
     }
 
     // Create image records
-    const imageInputs: CreateImageInput[] = uploadResults.map((result, index) => ({
-      auctionId: input.auctionId,
-      url: result.url,
-      publicId: result.publicId,
-      alt: null,
-      position: nextPosition + index,
-      isPrimary: nextPosition === 0 && index === 0, // First image is primary if it's the first upload
-      mimeType: result.mimeType,
-      size: result.size,
-    }));
+    const imageInputs: CreateImageInput[] = uploadResults.map(
+      (result, index) => ({
+        auctionId: input.auctionId,
+        url: result.url,
+        publicId: result.publicId,
+        alt: null,
+        position: nextPosition + index,
+        isPrimary: nextPosition === 0 && index === 0, // First image is primary if it's the first upload
+        mimeType: result.mimeType,
+        size: result.size,
+      })
+    );
 
     const images = await this.imageRepository.createMany(imageInputs);
 
-    return images.map(img => ({
+    return images.map((img) => ({
       id: img.id,
       url: img.url,
-      thumbnailUrl: this.storageService.getThumbnailUrl(img.url, 200, 200),
+      thumbnailUrl: this.storageService.getThumbnailByPreset(img.url, "card"),
       publicId: img.publicId,
       alt: img.alt,
       position: img.position,

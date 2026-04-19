@@ -1,4 +1,4 @@
-import { type UploadApiErrorResponse, type UploadApiResponse,v2 as cloudinary } from "cloudinary";
+import { type UploadApiErrorResponse, type UploadApiResponse, v2 as cloudinary } from "cloudinary";
 import { randomBytes } from "crypto";
 
 import type { ResponsiveImageUrls, StorageService, ThumbnailPreset, UploadResult } from "#application/services/storage-service";
@@ -6,8 +6,8 @@ import { env } from "#infrastructure/config/env";
 
 /** Thumbnail preset configurations */
 const THUMBNAIL_PRESETS: Record<ThumbnailPreset, { width: number; height: number }> = {
-  strip: { width: 80, height: 80 },
-  card: { width: 160, height: 120 },
+  strip: { width: 160, height: 160 },
+  card: { width: 400, height: 400 },
   search: { width: 120, height: 120 },
   og: { width: 1200, height: 630 },
 };
@@ -45,7 +45,7 @@ export class CloudinaryStorage implements StorageService {
       const baseName = filename.replace(/\.[^/.]+$/, "");
       const extension = filename.substring(filename.lastIndexOf('.'));
       const uniqueFilename = `${baseName}-${timestamp}-${processId}-${randomBytesHex}${extension}`;
-      
+
       const uploadStream = cloudinary.uploader.upload_stream(
         {
           folder,
@@ -84,14 +84,14 @@ export class CloudinaryStorage implements StorageService {
   getThumbnailUrl(url: string, width: number, height: number): string {
     // Cloudinary URL transformation
     // Transform: https://res.cloudinary.com/cloud_name/image/upload/v123/public_id
-    // To: https://res.cloudinary.com/cloud_name/image/upload/w_64,h_64,c_fill/v123/public_id
+    // To: https://res.cloudinary.com/cloud_name/image/upload/w_400,h_400,c_fill,g_auto,q_auto:best,f_auto/v123/public_id
 
     const parts = url.split("/upload/");
     if (parts.length !== 2) {
       return url; // Not a Cloudinary URL, return as-is
     }
 
-    return `${parts[0]}/upload/w_${width},h_${height},c_fill,g_auto/${parts[1]}`;
+    return `${parts[0]}/upload/w_${width},h_${height},c_fill,g_auto,q_auto:best,f_auto/${parts[1]}`;
   }
 
   getThumbnailByPreset(url: string, preset: ThumbnailPreset): string {
@@ -111,8 +111,8 @@ export class CloudinaryStorage implements StorageService {
 
     const [baseUrl, pathWithVersion] = parts;
 
-    // Generate thumbnail (80x80 for carousel strip)
-    const thumbnail = `${baseUrl}/upload/w_80,h_80,c_fill,g_auto/${pathWithVersion}`;
+    // Generate thumbnail (160x160 for carousel strip)
+    const thumbnail = `${baseUrl}/upload/w_160,h_160,c_fill,g_auto,q_auto:best,f_auto/${pathWithVersion}`;
 
     // Generate responsive width variants (maintain aspect ratio, limit width)
     const small = `${baseUrl}/upload/w_${RESPONSIVE_WIDTHS.small},c_limit,q_auto:best,f_auto/${pathWithVersion}`;

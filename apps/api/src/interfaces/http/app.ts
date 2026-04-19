@@ -6,12 +6,32 @@ import helmet from "@fastify/helmet";
 import jwt from "@fastify/jwt";
 import multipart from "@fastify/multipart";
 import rateLimit from "@fastify/rate-limit";
-import type { FastifyReply } from "fastify";
+import type { FastifyReply, FastifyRequest } from "fastify";
 import Fastify from "fastify";
 import { z, ZodError } from "zod";
 
 import { AppError } from "#application/errors/app-error";
+import { AuditService } from "#application/services/audit-service";
 import { ALLOWED_MIME_TYPES } from "#application/services/storage-service";
+import { ApproveAuctionUseCase } from "#application/use-cases/admin/approve-auction.use-case";
+import { ApprovePendingEditUseCase } from "#application/use-cases/admin/approve-pending-edit.use-case";
+import { BanUserUseCase } from "#application/use-cases/admin/ban-user.use-case";
+import { CreateAdminUseCase } from "#application/use-cases/admin/create-admin.use-case";
+import { DemoteAdminUseCase } from "#application/use-cases/admin/demote-admin.use-case";
+import { ExportActivityLogsUseCase } from "#application/use-cases/admin/export-activity-logs.use-case";
+import { GetDashboardStatsUseCase } from "#application/use-cases/admin/get-dashboard-stats.use-case";
+import { GetUserDetailUseCase } from "#application/use-cases/admin/get-user-detail.use-case";
+import { ListActivityLogsUseCase } from "#application/use-cases/admin/list-activity-logs.use-case";
+import { ListAdminNotificationsUseCase } from "#application/use-cases/admin/list-admin-notifications.use-case";
+import { ListAdminsUseCase } from "#application/use-cases/admin/list-admins.use-case";
+import { ListDashboardRecentAuctionsUseCase } from "#application/use-cases/admin/list-dashboard-recent-auctions.use-case";
+import { ListPendingAuctionsUseCase } from "#application/use-cases/admin/list-pending-auctions.use-case";
+import { ListPendingEditsUseCase } from "#application/use-cases/admin/list-pending-edits.use-case";
+import { ListUsersUseCase } from "#application/use-cases/admin/list-users.use-case";
+import { PromoteUserUseCase } from "#application/use-cases/admin/promote-user.use-case";
+import { RejectAuctionUseCase } from "#application/use-cases/admin/reject-auction.use-case";
+import { RejectPendingEditUseCase } from "#application/use-cases/admin/reject-pending-edit.use-case";
+import { UnbanUserUseCase } from "#application/use-cases/admin/unban-user.use-case";
 import { AuthenticateUserUseCase } from "#application/use-cases/authenticate-user.use-case";
 import { CloseAuctionUseCase } from "#application/use-cases/close-auction.use-case";
 import { CreateAuctionUseCase } from "#application/use-cases/create-auction.use-case";
@@ -24,12 +44,33 @@ import { RegisterUserUseCase } from "#application/use-cases/register-user.use-ca
 import { ReorderAuctionImagesUseCase } from "#application/use-cases/reorder-auction-images.use-case";
 import { UploadAuctionImagesUseCase } from "#application/use-cases/upload-auction-images.use-case";
 import { env } from "#infrastructure/config/env";
+import { PrismaActivityLogRepository } from "#infrastructure/repositories/prisma-activity-log.repository";
 import { PrismaAuctionRepository } from "#infrastructure/repositories/prisma-auction.repository";
 import { PrismaImageRepository } from "#infrastructure/repositories/prisma-image.repository";
+import { PrismaPendingEditRepository } from "#infrastructure/repositories/prisma-pending-edit.repository";
 import { PrismaUserRepository } from "#infrastructure/repositories/prisma-user.repository";
 import { BunPasswordHasher } from "#infrastructure/security/bun-password-hasher";
 import { FastifyTokenService } from "#infrastructure/security/fastify-token-service";
 import { CloudinaryStorage } from "#infrastructure/storage/cloudinary-storage";
+import { ApproveAuctionController } from "#interfaces/http/controllers/admin/approve-auction.controller";
+import { ApprovePendingEditController } from "#interfaces/http/controllers/admin/approve-pending-edit.controller";
+import { BanUserController } from "#interfaces/http/controllers/admin/ban-user.controller";
+import { CreateAdminController } from "#interfaces/http/controllers/admin/create-admin.controller";
+import { DemoteAdminController } from "#interfaces/http/controllers/admin/demote-admin.controller";
+import { ExportActivityLogsController } from "#interfaces/http/controllers/admin/export-activity-logs.controller";
+import { GetDashboardStatsController } from "#interfaces/http/controllers/admin/get-dashboard-stats.controller";
+import { GetUserDetailController } from "#interfaces/http/controllers/admin/get-user-detail.controller";
+import { ListActivityLogsController } from "#interfaces/http/controllers/admin/list-activity-logs.controller";
+import { ListAdminNotificationsController } from "#interfaces/http/controllers/admin/list-admin-notifications.controller";
+import { ListAdminsController } from "#interfaces/http/controllers/admin/list-admins.controller";
+import { ListDashboardRecentAuctionsController } from "#interfaces/http/controllers/admin/list-dashboard-recent-auctions.controller";
+import { ListPendingAuctionsController } from "#interfaces/http/controllers/admin/list-pending-auctions.controller";
+import { ListPendingEditsController } from "#interfaces/http/controllers/admin/list-pending-edits.controller";
+import { ListUsersController } from "#interfaces/http/controllers/admin/list-users.controller";
+import { PromoteUserController } from "#interfaces/http/controllers/admin/promote-user.controller";
+import { RejectAuctionController } from "#interfaces/http/controllers/admin/reject-auction.controller";
+import { RejectPendingEditController } from "#interfaces/http/controllers/admin/reject-pending-edit.controller";
+import { UnbanUserController } from "#interfaces/http/controllers/admin/unban-user.controller";
 import { CloseAuctionController } from "#interfaces/http/controllers/auctions/close-auction.controller";
 import { CreateAuctionController } from "#interfaces/http/controllers/auctions/create-auction.controller";
 import { GetAuctionByIdController } from "#interfaces/http/controllers/auctions/get-auction-by-id.controller";
@@ -41,47 +82,62 @@ import { DeleteAuctionImageController } from "#interfaces/http/controllers/image
 import { GetAuctionImagesController } from "#interfaces/http/controllers/images/get-auction-images.controller";
 import { ReorderAuctionImagesController } from "#interfaces/http/controllers/images/reorder-auction-images.controller";
 import { UploadAuctionImagesController } from "#interfaces/http/controllers/images/upload-auction-images.controller";
+import { requireAdmin, requireSuperAdmin } from "#interfaces/http/middleware/require-role";
 import type { AuthenticatedUser } from "#interfaces/http/types/authenticated-user";
 
 const registerSchema = z.object({
-  name: z.string().min(2).max(100),
-  email: z.string().email({}).max(255),
-  password: z.string().min(8).max(128),
+ name: z.string().min(2).max(100),
+ email: z.string().email({}).max(255),
+ password: z.string().min(8).max(128),
 });
 
 const loginSchema = z.object({
-  email: z.string().email({}).max(255),
-  password: z.string().min(1),
+ email: z.string().email({}).max(255),
+ password: z.string().min(1),
 });
 
 const createAuctionSchema = z.object({
-  title: z.string().min(3).max(200),
-  description: z.string().max(5000).nullable().optional().default(null),
-  startingPrice: z.number().int().positive(),
-  endsAt: z.string().datetime({}),
+ title: z.string().min(3).max(200),
+ description: z.string().max(5000).nullable().optional().default(null),
+ startingPrice: z.number().int().positive(),
+ endsAt: z.string().datetime({}),
 });
 
 const auctionIdSchema = z.object({
-  auctionId: z.string().uuid({}),
+ auctionId: z.string().uuid({}),
 });
 
 const placeBidSchema = z.object({
-  amount: z.number().int().positive(),
+ amount: z.number().int().positive(),
 });
 
 const reorderImagesSchema = z.object({
-  positions: z.array(
-    z.object({
-      id: z.string().uuid(),
-      position: z.number().int().min(0),
-      isPrimary: z.boolean(),
-    })
-  ),
+ positions: z.array(
+ z.object({
+ id: z.string().uuid(),
+ position: z.number().int().min(0),
+ isPrimary: z.boolean(),
+ })
+ ),
 });
 
 const imageIdSchema = z.object({
-  auctionId: z.string().uuid(),
-  imageId: z.string().uuid(),
+ auctionId: z.string().uuid(),
+ imageId: z.string().uuid(),
+});
+
+const rejectAuctionSchema = z.object({
+ reason: z.string().min(5).max(500),
+});
+
+const createAdminSchema = z.object({
+ name: z.string().min(2).max(100),
+ email: z.string().email({}).max(255),
+ password: z.string().min(8).max(128),
+});
+
+const adminIdSchema = z.object({
+ adminId: z.string().uuid({}),
 });
 
 // Cookie names
@@ -89,448 +145,606 @@ const ACCESS_TOKEN_COOKIE = "access_token";
 const REFRESH_TOKEN_COOKIE = "refresh_token";
 
 export function buildApp() {
-  const app = Fastify({
-    logger: {
-      level: env.LOG_LEVEL,
-      base: {
-        service: "auction-api",
-        appEnv: env.APP_ENV,
-        nodeEnv: env.NODE_ENV,
-      },
-    },
-  });
+ const app = Fastify({
+ logger: {
+ level: env.LOG_LEVEL,
+ base: {
+ service: "auction-api",
+ appEnv: env.APP_ENV,
+ nodeEnv: env.NODE_ENV,
+ },
+ },
+ });
 
-  app.setErrorHandler((error, request, reply) => {
-    request.log.error({ error }, "Unhandled error");
-    if (error instanceof AppError) {
-      return reply.status(error.statusCode).send({ error: error.message });
-    }
+ app.setErrorHandler((error, request, reply) => {
+ request.log.error({ error }, "Unhandled error");
+ if (error instanceof AppError) {
+ return reply.status(error.statusCode).send({ error: error.message });
+ }
+ if (error instanceof ZodError) {
+ return reply.status(400).send({ error: "Dados inválidos" });
+ }
+ return reply.status(500).send({ error: "Erro interno" });
+ });
 
-    if (error instanceof ZodError) {
-      return reply.status(400).send({ error: "Dados inválidos" });
-    }
+ app.register(cors, {
+ origin: env.CORS_ORIGIN,
+ methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+ allowedHeaders: ["Content-Type", "Authorization"],
+ credentials: true,
+ });
 
-    return reply.status(500).send({ error: "Erro interno" });
-  });
+ // Compression (Brotli > gzip > deflate)
+ app.register(compress, {
+ global: true,
+ encodings: ["br", "gzip", "deflate"],
+ });
 
-  app.register(cors, {
-    origin: env.CORS_ORIGIN,
-    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-  });
+ // Security headers including X-Content-Type-Options: nosniff
+ app.register(helmet, {
+ contentSecurityPolicy: {
+ directives: {
+ defaultSrc: ["'self'"],
+ imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
+ scriptSrc: ["'self'"],
+ // 'unsafe-inline' required for Tailwind CSS runtime styling
+ styleSrc: ["'self'", "'unsafe-inline'"],
+ connectSrc: ["'self'"],
+ fontSrc: ["'self'"],
+ objectSrc: ["'none'"],
+ baseUri: ["'self'"],
+ formAction: ["'self'"],
+ frameAncestors: ["'none'"],
+ upgradeInsecureRequests: [],
+ },
+ },
+ crossOriginEmbedderPolicy: false,
+ hsts: {
+ maxAge: 31536000, // 1 year
+ includeSubDomains: true,
+ preload: true,
+ },
+ referrerPolicy: {
+ policy: "strict-origin-when-cross-origin",
+ },
+ });
 
-  // Compression (Brotli > gzip > deflate)
-  app.register(compress, {
-    global: true,
-    encodings: ["br", "gzip", "deflate"],
-  });
+ app.register(jwt, {
+ secret: env.JWT_SECRET,
+ });
 
-  // Security headers including X-Content-Type-Options: nosniff
-  app.register(helmet, {
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
-        scriptSrc: ["'self'"],
-        // 'unsafe-inline' required for Tailwind CSS runtime styling
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        connectSrc: ["'self'"],
-        fontSrc: ["'self'"],
-        objectSrc: ["'none'"],
-        baseUri: ["'self'"],
-        formAction: ["'self'"],
-        frameAncestors: ["'none'"],
-        upgradeInsecureRequests: [],
-      },
-    },
-    crossOriginEmbedderPolicy: false,
-    hsts: {
-      maxAge: 31536000, // 1 year
-      includeSubDomains: true,
-      preload: true,
-    },
-    referrerPolicy: {
-      policy: "strict-origin-when-cross-origin",
-    },
-  });
+ app.register(cookie, {
+ secret: env.COOKIE_SECRET,
+ parseOptions: {
+ httpOnly: true,
+ secure: env.SECURE_COOKIES,
+ sameSite: "lax",
+ path: "/",
+ },
+ });
 
-  app.register(jwt, {
-    secret: env.JWT_SECRET,
-  });
+ // Global rate limiting: 100 requests per 15 minutes per IP
+ app.register(rateLimit, {
+ max: 100,
+ timeWindow: "15 minutes",
+ keyGenerator: (request) => request.ip,
+ addHeaders: {
+ "x-ratelimit-limit": true,
+ "x-ratelimit-remaining": true,
+ "x-ratelimit-reset": true,
+ "retry-after": true,
+ },
+ });
 
-  app.register(cookie, {
-    secret: env.COOKIE_SECRET,
-    parseOptions: {
-      httpOnly: true,
-      secure: env.SECURE_COOKIES,
-      sameSite: "lax",
-      path: "/",
-    },
-  });
+ app.register(multipart, {
+ limits: {
+ fileSize: env.UPLOAD_MAX_SIZE,
+ files: 10, // Max 10 files per request
+ },
+ });
 
-  // Global rate limiting: 100 requests per 15 minutes per IP
-  app.register(rateLimit, {
-    max: 100,
-    timeWindow: "15 minutes",
-    keyGenerator: (request) => request.ip,
-    addHeaders: {
-      "x-ratelimit-limit": true,
-      "x-ratelimit-remaining": true,
-      "x-ratelimit-reset": true,
-      "retry-after": true,
-    },
-  });
+ // Permissions-Policy: disable sensitive APIs not used by the application
+ app.addHook("onSend", async (_request, reply) => {
+ reply.header(
+ "Permissions-Policy",
+ "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+ );
+ });
 
-  app.register(multipart, {
-    limits: {
-      fileSize: env.UPLOAD_MAX_SIZE,
-      files: 10, // Max 10 files per request
-    },
-  });
+ // Cache-Control for API responses: prevent caching of sensitive/dynamic data
+ app.addHook("onSend", async (_request, reply) => {
+ const current = reply.getHeader("cache-control");
+ if (!current) {
+ reply.header(
+ "Cache-Control",
+ "no-store, no-cache, must-revalidate, proxy-revalidate"
+ );
+ reply.header("Pragma", "no-cache");
+ reply.header("Expires", "0");
+ }
+ });
 
-  // Permissions-Policy: disable sensitive APIs not used by the application
-  app.addHook("onSend", async (_request, reply) => {
-    reply.header(
-      "Permissions-Policy",
-      "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
-    );
-  });
+ const userRepository = new PrismaUserRepository();
+ const auctionRepository = new PrismaAuctionRepository();
+ const imageRepository = new PrismaImageRepository();
+ const pendingEditRepository = new PrismaPendingEditRepository();
+ const activityLogRepository = new PrismaActivityLogRepository();
+ const storageService = new CloudinaryStorage();
+ const passwordHasher = new BunPasswordHasher();
+ const tokenService = new FastifyTokenService(app, env.JWT_EXPIRES_IN, env.JWT_REFRESH_EXPIRES_IN);
+ const auditService = new AuditService(activityLogRepository);
 
-  // Cache-Control for API responses: prevent caching of sensitive/dynamic data
-  app.addHook("onSend", async (_request, reply) => {
-    const current = reply.getHeader("cache-control");
-    if (!current) {
-      reply.header(
-        "Cache-Control",
-        "no-store, no-cache, must-revalidate, proxy-revalidate"
-      );
-      reply.header("Pragma", "no-cache");
-      reply.header("Expires", "0");
-    }
-  });
+ const registerController = new RegisterController(
+ new RegisterUserUseCase(userRepository, passwordHasher)
+ );
+ const loginController = new LoginController(
+ new LoginUserUseCase(new AuthenticateUserUseCase(userRepository, passwordHasher), tokenService)
+ );
 
-  const userRepository = new PrismaUserRepository();
-  const auctionRepository = new PrismaAuctionRepository();
-  const imageRepository = new PrismaImageRepository();
-  const storageService = new CloudinaryStorage();
-  const passwordHasher = new BunPasswordHasher();
-  const tokenService = new FastifyTokenService(app, env.JWT_EXPIRES_IN, env.JWT_REFRESH_EXPIRES_IN);
+ const listAuctionsController = new ListOpenAuctionsController(
+ new ListOpenAuctionsUseCase(auctionRepository)
+ );
+ const getAuctionByIdController = new GetAuctionByIdController(
+ new GetAuctionByIdUseCase(auctionRepository)
+ );
+ const createAuctionController = new CreateAuctionController(
+ new CreateAuctionUseCase(auctionRepository)
+ );
+ const closeAuctionController = new CloseAuctionController(
+ new CloseAuctionUseCase(auctionRepository)
+ );
+ const placeBidController = new PlaceBidController(new PlaceBidUseCase(auctionRepository));
 
-  const registerController = new RegisterController(
-    new RegisterUserUseCase(userRepository, passwordHasher)
-  );
-  const loginController = new LoginController(
-    new LoginUserUseCase(new AuthenticateUserUseCase(userRepository, passwordHasher), tokenService)
-  );
+ // Image controllers
+ const uploadImagesController = new UploadAuctionImagesController(
+ new UploadAuctionImagesUseCase(
+ imageRepository,
+ auctionRepository,
+ storageService,
+ env.UPLOAD_MAX_SIZE
+ )
+ );
+ const getImagesController = new GetAuctionImagesController(imageRepository, storageService);
+ const deleteImageController = new DeleteAuctionImageController(
+ new DeleteAuctionImageUseCase(imageRepository, auctionRepository, storageService)
+ );
+ const reorderImagesController = new ReorderAuctionImagesController(
+ new ReorderAuctionImagesUseCase(imageRepository, auctionRepository)
+ );
 
-  const listAuctionsController = new ListOpenAuctionsController(
-    new ListOpenAuctionsUseCase(auctionRepository)
-  );
-  const getAuctionByIdController = new GetAuctionByIdController(
-    new GetAuctionByIdUseCase(auctionRepository)
-  );
-  const createAuctionController = new CreateAuctionController(
-    new CreateAuctionUseCase(auctionRepository)
-  );
-  const closeAuctionController = new CloseAuctionController(
-    new CloseAuctionUseCase(auctionRepository)
-  );
-  const placeBidController = new PlaceBidController(new PlaceBidUseCase(auctionRepository));
+ // Admin controllers
+ const exportActivityLogsController = new ExportActivityLogsController(
+ new ExportActivityLogsUseCase(activityLogRepository)
+ );
+ const approvePendingEditController = new ApprovePendingEditController(
+ new ApprovePendingEditUseCase(pendingEditRepository, auditService)
+ );
+ const createAdminController = new CreateAdminController(
+ new CreateAdminUseCase(userRepository, passwordHasher, auditService)
+ );
+ const demoteAdminController = new DemoteAdminController(
+ new DemoteAdminUseCase(userRepository, auditService)
+ );
+ const getDashboardStatsController = new GetDashboardStatsController(
+ new GetDashboardStatsUseCase()
+ );
+ const getUserDetailController = new GetUserDetailController(
+ new GetUserDetailUseCase(userRepository)
+ );
+ const listActivityLogsController = new ListActivityLogsController(
+ new ListActivityLogsUseCase(activityLogRepository)
+ );
+ const listAdminNotificationsController = new ListAdminNotificationsController(
+ new ListAdminNotificationsUseCase(activityLogRepository)
+ );
+ const listPendingEditsController = new ListPendingEditsController(
+ new ListPendingEditsUseCase(pendingEditRepository)
+ );
+ const listAdminsController = new ListAdminsController(
+ new ListAdminsUseCase(userRepository)
+ );
+ const listDashboardRecentAuctionsController = new ListDashboardRecentAuctionsController(
+ new ListDashboardRecentAuctionsUseCase()
+ );
+ const listPendingAuctionsController = new ListPendingAuctionsController(
+ new ListPendingAuctionsUseCase()
+ );
+ const listUsersController = new ListUsersController(
+ new ListUsersUseCase(userRepository)
+ );
+ const approveAuctionController = new ApproveAuctionController(
+ new ApproveAuctionUseCase(auctionRepository, auditService)
+ );
+ const banUserController = new BanUserController(
+ new BanUserUseCase(userRepository, auditService)
+ );
+ const promoteUserController = new PromoteUserController(
+ new PromoteUserUseCase(userRepository, auditService)
+ );
+ const rejectAuctionController = new RejectAuctionController(
+ new RejectAuctionUseCase(auctionRepository, auditService)
+ );
+ const rejectPendingEditController = new RejectPendingEditController(
+ new RejectPendingEditUseCase(pendingEditRepository, auditService)
+ );
+ const unbanUserController = new UnbanUserController(
+ new UnbanUserUseCase(userRepository, auditService)
+ );
 
-  // Image controllers
-  const uploadImagesController = new UploadAuctionImagesController(
-    new UploadAuctionImagesUseCase(
-      imageRepository,
-      auctionRepository,
-      storageService,
-      env.UPLOAD_MAX_SIZE
-    )
-  );
-  const getImagesController = new GetAuctionImagesController(imageRepository, storageService);
-  const deleteImageController = new DeleteAuctionImageController(
-    new DeleteAuctionImageUseCase(imageRepository, auctionRepository, storageService)
-  );
-  const reorderImagesController = new ReorderAuctionImagesController(
-    new ReorderAuctionImagesUseCase(imageRepository, auctionRepository)
-  );
+ // Helper to set auth cookies
+ function setAuthCookies(
+ reply: FastifyReply,
+ accessToken: string,
+ refreshToken: string
+ ) {
+ reply.setCookie(ACCESS_TOKEN_COOKIE, accessToken, {
+ httpOnly: true,
+ secure: env.SECURE_COOKIES,
+ sameSite: "lax",
+ path: "/",
+ maxAge: 900, // 15 minutes
+ });
+ reply.setCookie(REFRESH_TOKEN_COOKIE, refreshToken, {
+ httpOnly: true,
+ secure: env.SECURE_COOKIES,
+ sameSite: "lax",
+ path: "/",
+ maxAge: 604800, // 7 days
+ });
+ }
 
-  // Helper to set auth cookies
-  function setAuthCookies(
-    reply: FastifyReply,
-    accessToken: string,
-    refreshToken: string
-  ) {
-    reply.setCookie(ACCESS_TOKEN_COOKIE, accessToken, {
-      httpOnly: true,
-      secure: env.SECURE_COOKIES,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 900, // 15 minutes
-    });
-    reply.setCookie(REFRESH_TOKEN_COOKIE, refreshToken, {
-      httpOnly: true,
-      secure: env.SECURE_COOKIES,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 604800, // 7 days
-    });
-  }
+ // Helper to clear auth cookies
+ function clearAuthCookies(reply: FastifyReply) {
+ reply.clearCookie(ACCESS_TOKEN_COOKIE, { path: "/" });
+ reply.clearCookie(REFRESH_TOKEN_COOKIE, { path: "/" });
+ }
 
-  // Helper to clear auth cookies
-  function clearAuthCookies(reply: FastifyReply) {
-    reply.clearCookie(ACCESS_TOKEN_COOKIE, { path: "/" });
-    reply.clearCookie(REFRESH_TOKEN_COOKIE, { path: "/" });
-  }
+ // Custom authentication hook that reads from cookie
+ // Note: @fastify/jwt already decorates request with 'user', so we don't need decorateRequest here
+ app.addHook("onRequest", async (request, reply) => {
+ const accessToken = request.cookies[ACCESS_TOKEN_COOKIE];
+ if (!accessToken) {
+ return;
+ }
 
-  // Custom authentication hook that reads from cookie
-  // Note: @fastify/jwt already decorates request with 'user', so we don't need decorateRequest here
-  app.addHook("onRequest", async (request, reply) => {
-    const accessToken = request.cookies[ACCESS_TOKEN_COOKIE];
-    if (!accessToken) {
-      return;
-    }
+ try {
+ const decoded = await app.jwt.verify(accessToken) as { sub: string; email: string; role: string };
+ request.user = {
+ sub: decoded.sub,
+ email: decoded.email,
+ role: decoded.role as AuthenticatedUser["role"],
+ };
+ } catch {
+ // Token invalid or expired, clear the cookie
+ reply.clearCookie(ACCESS_TOKEN_COOKIE, { path: "/" });
+ }
+ });
 
-    try {
-      const decoded = await app.jwt.verify(accessToken) as { sub: string; email: string; role: string };
-      request.user = {
-        sub: decoded.sub,
-        email: decoded.email,
-        role: decoded.role as AuthenticatedUser["role"],
-      };
-    } catch {
-      // Token invalid or expired, clear the cookie
-      reply.clearCookie(ACCESS_TOKEN_COOKIE, { path: "/" });
-    }
-  });
+ app.get("/health", async () => ({
+ status: "ok",
+ timestamp: new Date().toISOString(),
+ }));
 
-  app.get("/health", async () => ({
-    status: "ok",
-    timestamp: new Date().toISOString(),
-  }));
+ app.post("/auth/register", {
+ config: {
+ rateLimit: {
+ max: 5,
+ timeWindow: "15 minutes",
+ keyGenerator: (request) => (request.body as { email?: string })?.email || request.ip,
+ },
+ },
+ }, async (request, reply) => {
+ const body = registerSchema.parse(request.body);
+ const user = await registerController.handle(body);
+ return reply.status(201).send({ data: user });
+ });
 
-  app.post("/auth/register", {
-    config: {
-      rateLimit: {
-        max: 5,
-        timeWindow: "15 minutes",
-        keyGenerator: (request) => (request.body as { email?: string })?.email || request.ip,
-      },
-    },
-  }, async (request, reply) => {
-    const body = registerSchema.parse(request.body);
-    const user = await registerController.handle(body);
-    return reply.status(201).send({ data: user });
-  });
+ app.post("/auth/login", {
+ config: {
+ rateLimit: {
+ max: 5,
+ timeWindow: "15 minutes",
+ keyGenerator: (request) => (request.body as { email?: string })?.email || request.ip,
+ },
+ },
+ }, async (request, reply) => {
+ const body = loginSchema.parse(request.body);
+ const { accessToken, refreshToken, user } = await loginController.handle(body);
+ setAuthCookies(reply, accessToken, refreshToken);
+ return { data: { user } };
+ });
 
-  app.post("/auth/login", {
-    config: {
-      rateLimit: {
-        max: 5,
-        timeWindow: "15 minutes",
-        keyGenerator: (request) => (request.body as { email?: string })?.email || request.ip,
-      },
-    },
-  }, async (request, reply) => {
-    const body = loginSchema.parse(request.body);
-    const { accessToken, refreshToken, user } = await loginController.handle(body);
-    setAuthCookies(reply, accessToken, refreshToken);
-    return { data: { user } };
-  });
+ app.post("/auth/refresh", async (request, reply) => {
+ const refreshToken = request.cookies[REFRESH_TOKEN_COOKIE];
+ if (!refreshToken) {
+ return reply.status(401).send({ error: "Refresh token não encontrado" });
+ }
 
-  app.post("/auth/refresh", async (request, reply) => {
-    const refreshToken = request.cookies[REFRESH_TOKEN_COOKIE];
-    if (!refreshToken) {
-      return reply.status(401).send({ error: "Refresh token não encontrado" });
-    }
+ try {
+ const decoded = await app.jwt.verify(refreshToken) as { sub: string; email: string; role: string };
+ const accessToken = await tokenService.signAccessToken({
+ sub: decoded.sub,
+ email: decoded.email,
+  role: decoded.role as AuthenticatedUser["role"],
+ });
+ const newRefreshToken = await tokenService.signRefreshToken({
+ sub: decoded.sub,
+ email: decoded.email,
+  role: decoded.role as AuthenticatedUser["role"],
+ });
+ setAuthCookies(reply, accessToken, newRefreshToken);
+ return { data: { user: { id: decoded.sub, email: decoded.email, role: decoded.role } } };
+ } catch {
+ clearAuthCookies(reply);
+ return reply.status(401).send({ error: "Refresh token inválido" });
+ }
+ });
 
-    try {
-      const decoded = await app.jwt.verify(refreshToken) as { sub: string; email: string; role: string };
-      const accessToken = await tokenService.signAccessToken({
-        sub: decoded.sub,
-        email: decoded.email,
-        role: decoded.role as "USER" | "ADMIN",
-      });
-      const newRefreshToken = await tokenService.signRefreshToken({
-        sub: decoded.sub,
-        email: decoded.email,
-        role: decoded.role as "USER" | "ADMIN",
-      });
-      setAuthCookies(reply, accessToken, newRefreshToken);
-      return { data: { user: { id: decoded.sub, email: decoded.email, role: decoded.role } } };
-    } catch {
-      clearAuthCookies(reply);
-      return reply.status(401).send({ error: "Refresh token inválido" });
-    }
-  });
+ app.post("/auth/logout", async (request, reply) => {
+ clearAuthCookies(reply);
+ return { data: { message: "Logout realizado com sucesso" } };
+ });
 
-  app.post("/auth/logout", async (request, reply) => {
-    clearAuthCookies(reply);
-    return { data: { message: "Logout realizado com sucesso" } };
-  });
+ app.get("/auth/me", async (request, reply) => {
+ const accessToken = request.cookies[ACCESS_TOKEN_COOKIE];
+ if (!accessToken) {
+ return reply.status(401).send({ error: "Não autenticado" });
+ }
 
-  app.get("/auth/me", async (request, reply) => {
-    const accessToken = request.cookies[ACCESS_TOKEN_COOKIE];
-    if (!accessToken) {
-      return reply.status(401).send({ error: "Não autenticado" });
-    }
+ try {
+ const decoded = await app.jwt.verify(accessToken) as { sub: string; email: string; role: string };
+ return {
+ data: {
+ user: {
+ id: decoded.sub,
+ email: decoded.email,
+ role: decoded.role,
+ },
+ },
+ };
+ } catch {
+ return reply.status(401).send({ error: "Token inválido" });
+ }
+ });
 
-    try {
-      const decoded = await app.jwt.verify(accessToken) as { sub: string; email: string; role: string };
-      return {
-        data: {
-          user: {
-            id: decoded.sub,
-            email: decoded.email,
-            role: decoded.role,
-          },
-        },
-      };
-    } catch {
-      return reply.status(401).send({ error: "Token inválido" });
-    }
-  });
+ app.get("/auctions", async () => {
+ const auctions = await listAuctionsController.handle();
+ // Fetch images for each auction
+ const auctionsWithImages = await Promise.all(
+ auctions.map(async (auction) => ({
+ ...auction,
+ images: await getImagesController.handle(auction.id),
+ }))
+ );
+ return { data: auctionsWithImages };
+ });
 
-  app.get("/auctions", async () => {
-    const auctions = await listAuctionsController.handle();
-    // Fetch images for each auction
-    const auctionsWithImages = await Promise.all(
-      auctions.map(async (auction) => ({
-        ...auction,
-        images: await getImagesController.handle(auction.id),
-      }))
-    );
-    return { data: auctionsWithImages };
-  });
+ app.get("/auctions/:auctionId", async (request) => {
+ const params = auctionIdSchema.parse(request.params);
+ const auction = await getAuctionByIdController.handle(params.auctionId);
+ const images = await getImagesController.handle(params.auctionId);
+ return { data: { ...auction, images } };
+ });
 
-  app.get("/auctions/:auctionId", async (request) => {
-    const params = auctionIdSchema.parse(request.params);
-    const auction = await getAuctionByIdController.handle(params.auctionId);
-    const images = await getImagesController.handle(params.auctionId);
-    return { data: { ...auction, images } };
-  });
+ app.post("/auctions", async (request, reply) => {
+ if (!request.user) {
+ return reply.status(401).send({ error: "Não autenticado" });
+ }
+ const body = createAuctionSchema.parse(request.body);
 
-  app.post("/auctions", async (request, reply) => {
-    if (!request.user) {
-      return reply.status(401).send({ error: "Não autenticado" });
-    }
-    const body = createAuctionSchema.parse(request.body);
+ const auction = await createAuctionController.handle({
+ ...body,
+ sellerId: request.user.sub,
+ });
 
-    const auction = await createAuctionController.handle({
-      ...body,
-      sellerId: request.user.sub,
-    });
+ return reply.status(201).send({ data: auction });
+ });
 
-    return reply.status(201).send({ data: auction });
-  });
+ app.patch("/auctions/:auctionId/close", async (request, reply) => {
+ if (!request.user) {
+ return reply.status(401).send({ error: "Não autenticado" });
+ }
+ const params = auctionIdSchema.parse(request.params);
 
-  app.patch("/auctions/:auctionId/close", async (request, reply) => {
-    if (!request.user) {
-      return reply.status(401).send({ error: "Não autenticado" });
-    }
-    const params = auctionIdSchema.parse(request.params);
+ await closeAuctionController.handle({
+ auctionId: params.auctionId,
+ userId: request.user.sub,
+  isAdmin: request.user.role === "ADMIN" || request.user.role === "SUPER_ADMIN",
+ });
 
-    await closeAuctionController.handle({
-      auctionId: params.auctionId,
-      userId: request.user.sub,
-      isAdmin: request.user.role === "ADMIN",
-    });
+ return reply.status(204).send();
+ });
 
-    return reply.status(204).send();
-  });
+ app.post("/auctions/:auctionId/bids", async (request, reply) => {
+ if (!request.user) {
+ return reply.status(401).send({ error: "Não autenticado" });
+ }
 
-  app.post("/auctions/:auctionId/bids", async (request, reply) => {
-    if (!request.user) {
-      return reply.status(401).send({ error: "Não autenticado" });
-    }
+ const params = auctionIdSchema.parse(request.params);
+ const body = placeBidSchema.parse(request.body);
 
-    const params = auctionIdSchema.parse(request.params);
-    const body = placeBidSchema.parse(request.body);
+ const result = await placeBidController.handle({
+ auctionId: params.auctionId,
+ bidderId: request.user.sub,
+ amount: body.amount,
+ });
 
-    const result = await placeBidController.handle({
-      auctionId: params.auctionId,
-      bidderId: request.user.sub,
-      amount: body.amount,
-    });
+ return reply.status(201).send({ data: result });
+ });
 
-    return reply.status(201).send({ data: result });
-  });
+ // Image routes
+ app.get("/auctions/:auctionId/images", async (request) => {
+ const params = auctionIdSchema.parse(request.params);
+ return { data: await getImagesController.handle(params.auctionId) };
+ });
 
-  // Image routes
-  app.get("/auctions/:auctionId/images", async (request) => {
-    const params = auctionIdSchema.parse(request.params);
-    return { data: await getImagesController.handle(params.auctionId) };
-  });
+ app.post("/auctions/:auctionId/images", async (request, reply) => {
+ if (!request.user) {
+ return reply.status(401).send({ error: "Não autenticado" });
+ }
+ const params = auctionIdSchema.parse(request.params);
 
-  app.post("/auctions/:auctionId/images", async (request, reply) => {
-    if (!request.user) {
-      return reply.status(401).send({ error: "Não autenticado" });
-    }
-    const params = auctionIdSchema.parse(request.params);
+ const parts = request.parts();
+ const files: Array<{ buffer: Buffer; filename: string; mimeType: string }> = [];
 
-    const parts = request.parts();
-    const files: Array<{ buffer: Buffer; filename: string; mimeType: string }> = [];
+ for await (const part of parts) {
+ if (part.type === "file") {
+ const buffer = await part.toBuffer();
+ // Validate MIME type
+ if (!ALLOWED_MIME_TYPES.includes(part.mimetype as typeof ALLOWED_MIME_TYPES[number])) {
+ return reply.status(400).send({
+ error: `Tipo de arquivo não permitido: ${part.mimetype}. Use JPEG, PNG ou WebP`,
+ });
+ }
+ files.push({
+ buffer,
+ filename: part.filename,
+ mimeType: part.mimetype,
+ });
+ }
+ }
 
-    for await (const part of parts) {
-      if (part.type === "file") {
-        const buffer = await part.toBuffer();
-        // Validate MIME type
-        if (!ALLOWED_MIME_TYPES.includes(part.mimetype as typeof ALLOWED_MIME_TYPES[number])) {
-          return reply.status(400).send({
-            error: `Tipo de arquivo não permitido: ${part.mimetype}. Use JPEG, PNG ou WebP`,
-          });
-        }
-        files.push({
-          buffer,
-          filename: part.filename,
-          mimeType: part.mimetype,
-        });
-      }
-    }
+ if (files.length === 0) {
+ return reply.status(400).send({ error: "Nenhum arquivo enviado" });
+ }
 
-    if (files.length === 0) {
-      return reply.status(400).send({ error: "Nenhum arquivo enviado" });
-    }
+ const result = await uploadImagesController.handle({
+ auctionId: params.auctionId,
+ files,
+ userId: request.user.sub,
+ });
 
-    const result = await uploadImagesController.handle({
-      auctionId: params.auctionId,
-      files,
-      userId: request.user.sub,
-    });
+ return reply.status(201).send({ data: result });
+ });
 
-    return reply.status(201).send({ data: result });
-  });
+ app.delete("/auctions/:auctionId/images/:imageId", async (request, reply) => {
+ if (!request.user) {
+ return reply.status(401).send({ error: "Não autenticado" });
+ }
+ const params = imageIdSchema.parse(request.params);
 
-  app.delete("/auctions/:auctionId/images/:imageId", async (request, reply) => {
-    if (!request.user) {
-      return reply.status(401).send({ error: "Não autenticado" });
-    }
-    const params = imageIdSchema.parse(request.params);
+ await deleteImageController.handle({
+ auctionId: params.auctionId,
+ imageId: params.imageId,
+ userId: request.user.sub,
+ });
 
-    await deleteImageController.handle({
-      auctionId: params.auctionId,
-      imageId: params.imageId,
-      userId: request.user.sub,
-    });
+ return reply.status(204).send();
+ });
 
-    return reply.status(204).send();
-  });
+ app.patch("/auctions/:auctionId/images/reorder", async (request, reply) => {
+ if (!request.user) {
+ return reply.status(401).send({ error: "Não autenticado" });
+ }
+ const params = auctionIdSchema.parse(request.params);
+ const body = reorderImagesSchema.parse(request.body);
 
-  app.patch("/auctions/:auctionId/images/reorder", async (request, reply) => {
-    if (!request.user) {
-      return reply.status(401).send({ error: "Não autenticado" });
-    }
-    const params = auctionIdSchema.parse(request.params);
-    const body = reorderImagesSchema.parse(request.body);
+ await reorderImagesController.handle({
+ auctionId: params.auctionId,
+ userId: request.user.sub,
+ positions: body.positions,
+ });
 
-    await reorderImagesController.handle({
-      auctionId: params.auctionId,
-      userId: request.user.sub,
-      positions: body.positions,
-    });
+ return reply.status(204).send();
+ });
 
-    return reply.status(204).send();
-  });
+ // ==================== ADMIN ROUTES ====================
 
-  return app;
+ // Dashboard stats
+ app.get("/admin/dashboard/stats", { preHandler: requireAdmin() }, async (_request, reply) => {
+ return getDashboardStatsController.handle(reply);
+ });
+
+ // Dashboard recent auctions
+ app.get("/admin/dashboard/recent-auctions", { preHandler: requireAdmin() }, async (_request, reply) => {
+ return listDashboardRecentAuctionsController.handle(reply);
+ });
+
+ // Activity logs
+ app.get("/admin/logs", { preHandler: requireAdmin() }, async (request, reply) => {
+ return listActivityLogsController.handle(request, reply);
+ });
+
+ // Activity logs export
+ app.get("/admin/logs/export", { preHandler: requireAdmin() }, async (request, reply) => {
+ return exportActivityLogsController.handle(request, reply);
+ });
+
+ // Admin notifications
+ app.get("/admin/notifications", { preHandler: requireAdmin() }, async (request, reply) => {
+ return listAdminNotificationsController.handle(request, reply);
+ });
+
+ // Pending auction edits review
+ app.get("/admin/edits/pending", { preHandler: requireAdmin() }, async (request, reply) => {
+ return listPendingEditsController.handle(request, reply);
+ });
+
+ app.patch("/admin/edits/:editId/approve", { preHandler: requireAdmin() }, async (request, reply) => {
+ return approvePendingEditController.handle(request, reply);
+ });
+
+ app.patch("/admin/edits/:editId/reject", { preHandler: requireAdmin() }, async (request, reply) => {
+ return rejectPendingEditController.handle(request, reply);
+ });
+
+ // Admin management (SUPER_ADMIN)
+ app.get("/admin/admins", { preHandler: requireSuperAdmin() }, async (_request, reply) => {
+ return listAdminsController.handle(reply);
+ });
+
+ app.post("/admin/admins", { preHandler: requireSuperAdmin() }, async (request, reply) => {
+ request.body = createAdminSchema.parse(request.body);
+ return createAdminController.handle(
+ request as FastifyRequest<{ Body: { name: string; email: string; password: string } }>,
+ reply
+ );
+ });
+
+ app.patch("/admin/admins/:adminId/demote", { preHandler: requireSuperAdmin() }, async (request, reply) => {
+ request.params = adminIdSchema.parse(request.params);
+ return demoteAdminController.handle(
+ request as FastifyRequest<{ Params: { adminId: string } }>,
+ reply
+ );
+ });
+
+ // Users management
+ app.get("/admin/users", { preHandler: requireAdmin() }, async (request, reply) => {
+ return listUsersController.handle(request, reply);
+ });
+
+ app.get("/admin/users/:userId", { preHandler: requireAdmin() }, async (request, reply) => {
+ return getUserDetailController.handle(request, reply);
+ });
+
+ app.patch("/admin/users/:userId/ban", { preHandler: requireAdmin() }, async (request, reply) => {
+ return banUserController.handle(request, reply);
+ });
+
+ app.patch("/admin/users/:userId/unban", { preHandler: requireAdmin() }, async (request, reply) => {
+ return unbanUserController.handle(request, reply);
+ });
+
+ app.patch("/admin/users/:userId/promote", { preHandler: requireSuperAdmin() }, async (request, reply) => {
+ return promoteUserController.handle(request, reply);
+ });
+
+ // List pending auctions for approval
+ app.get("/admin/auctions/pending", { preHandler: requireAdmin() }, async (request, reply) => {
+ return listPendingAuctionsController.handle(request, reply);
+ });
+
+ // Approve an auction
+ app.patch("/admin/auctions/:auctionId/approve", { preHandler: requireAdmin() }, async (request, reply) => {
+ return approveAuctionController.handle(request, reply);
+ });
+
+ // Reject an auction
+ app.patch("/admin/auctions/:auctionId/reject", { preHandler: requireAdmin() }, async (request, reply) => {
+ rejectAuctionSchema.parse(request.body);
+ return rejectAuctionController.handle(request, reply);
+ });
+
+ return app;
 }

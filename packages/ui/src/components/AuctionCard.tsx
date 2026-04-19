@@ -1,6 +1,8 @@
 import type { AuctionDto } from "@auction/shared-types";
 import type { LinkProps } from "react-router-dom";
 
+import { getThumbnailByPreset } from "../utils/image-utils";
+
 export interface AuctionCardProps {
   auction: AuctionDto;
   timeRemaining: {
@@ -73,7 +75,8 @@ export function AuctionCard({
 }: AuctionCardProps) {
   const hasImage = auction.images && auction.images.length > 0;
   const primaryImage = auction.images?.find((img) => img.isPrimary) ?? auction.images?.[0];
-  const thumbnailUrl = primaryImage?.thumbnailUrl ?? null;
+  // Use getThumbnailByPreset for better quality (400x400 with q_auto:best,f_auto)
+  const thumbnailUrl = primaryImage?.url ? getThumbnailByPreset(primaryImage.url, "card") : null;
 
   const formatPrice = (value: number) =>
     new Intl.NumberFormat("pt-BR", {
@@ -89,7 +92,7 @@ export function AuctionCard({
     return "text-slate-700";
   };
 
-    const LinkComponent = Link;
+  const LinkComponent = Link;
 
   return (
     <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white transition duration-200 hover:border-stone-300 hover:shadow-lg">
@@ -155,12 +158,12 @@ export function AuctionCard({
 
         {/* CTA Buttons */}
         <div className="mt-4 flex gap-2">
-      <LinkComponent
-        to={auction.id ? `/auctions/${auction.id}` : `#`}
-        className="flex-1 rounded-xl border border-stone-300 px-4 py-2.5 text-center text-sm font-medium text-slate-700 transition hover:border-stone-400 hover:bg-stone-50"
-      >
-        Ver detalhes
-      </LinkComponent>
+          <LinkComponent
+            to={auction.id ? `/auctions/${auction.id}` : `#`}
+            className="flex-1 rounded-xl border border-stone-300 px-4 py-2.5 text-center text-sm font-medium text-slate-700 transition hover:border-stone-400 hover:bg-stone-50"
+          >
+            Ver detalhes
+          </LinkComponent>
           <button
             type="button"
             onClick={() => onPlaceBid?.(auction.id)}

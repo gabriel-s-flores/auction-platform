@@ -21,6 +21,10 @@ export class AuthenticateUserUseCase {
       throw new AppError("Credenciais inválidas", 401);
     }
 
+    if (user.isBanned) {
+      throw new AppError("Usuário bloqueado", 403);
+    }
+
     const isValidPassword = await this.passwordHasher.compare(input.password, user.passwordHash);
 
     if (!isValidPassword) {

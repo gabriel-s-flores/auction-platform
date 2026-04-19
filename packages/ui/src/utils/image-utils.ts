@@ -12,8 +12,8 @@ export const RESPONSIVE_WIDTHS = {
  * Thumbnail preset configurations
  */
 export const THUMBNAIL_PRESETS = {
-  strip: { width: 80, height: 80 },
-  card: { width: 160, height: 120 },
+  strip: { width: 160, height: 160 },
+  card: { width: 400, height: 400 },
   search: { width: 120, height: 120 },
   og: { width: 1200, height: 630 },
 } as const;
@@ -21,7 +21,7 @@ export const THUMBNAIL_PRESETS = {
 export interface ResponsiveImageUrls {
   /** Original URL */
   original: string;
-  /** Thumbnail (80x80) */
+  /** Thumbnail (160x160) */
   thumbnail: string;
   /** Small width variant (400px) */
   small: string;
@@ -43,10 +43,7 @@ export function isCloudinaryUrl(url: string): boolean {
 /**
  * Transform a Cloudinary URL with width/height constraints
  */
-function transformCloudinaryUrl(
-  url: string,
-  transformation: string
-): string {
+function transformCloudinaryUrl(url: string, transformation: string): string {
   const parts = url.split("/upload/");
   if (parts.length !== 2) {
     return url;
@@ -56,16 +53,16 @@ function transformCloudinaryUrl(
 
 /**
  * Generate a thumbnail URL with the specified dimensions
+ * Includes quality optimization (q_auto:best) and format optimization (f_auto)
  */
-export function getThumbnailUrl(
-  url: string,
-  width: number,
-  height: number
-): string {
+export function getThumbnailUrl(url: string, width: number, height: number): string {
   if (!isCloudinaryUrl(url)) {
     return url;
   }
-  return transformCloudinaryUrl(url, `w_${width},h_${height},c_fill,g_auto`);
+  return transformCloudinaryUrl(
+    url,
+    `w_${width},h_${height},c_fill,g_auto,q_auto:best,f_auto`
+  );
 }
 
 /**
@@ -97,11 +94,26 @@ export function getResponsiveUrls(url: string): ResponsiveImageUrls {
   // Use transformCloudinaryUrl helper instead of manual URL manipulation
   return {
     original: url,
-    thumbnail: transformCloudinaryUrl(url, "w_80,h_80,c_fill,g_auto"),
-    small: transformCloudinaryUrl(url, `w_${RESPONSIVE_WIDTHS.small},c_limit,q_auto:best,f_auto`),
-    medium: transformCloudinaryUrl(url, `w_${RESPONSIVE_WIDTHS.medium},c_limit,q_auto:best,f_auto`),
-    large: transformCloudinaryUrl(url, `w_${RESPONSIVE_WIDTHS.large},c_limit,q_auto:best,f_auto`),
-    xlarge: transformCloudinaryUrl(url, `w_${RESPONSIVE_WIDTHS.xlarge},c_limit,q_auto:best,f_auto`),
+    thumbnail: transformCloudinaryUrl(
+      url,
+      "w_160,h_160,c_fill,g_auto,q_auto:best,f_auto"
+    ),
+    small: transformCloudinaryUrl(
+      url,
+      `w_${RESPONSIVE_WIDTHS.small},c_limit,q_auto:best,f_auto`
+    ),
+    medium: transformCloudinaryUrl(
+      url,
+      `w_${RESPONSIVE_WIDTHS.medium},c_limit,q_auto:best,f_auto`
+    ),
+    large: transformCloudinaryUrl(
+      url,
+      `w_${RESPONSIVE_WIDTHS.large},c_limit,q_auto:best,f_auto`
+    ),
+    xlarge: transformCloudinaryUrl(
+      url,
+      `w_${RESPONSIVE_WIDTHS.xlarge},c_limit,q_auto:best,f_auto`
+    ),
   };
 }
 
