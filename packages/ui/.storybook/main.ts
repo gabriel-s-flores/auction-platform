@@ -18,6 +18,9 @@ const config = {
   },
   typescript: {
     reactDocgen: "react-docgen-typescript",
+    reactDocgenTypescriptOptions: {
+      tsconfigPath: resolve(packageRoot, "tsconfig.json"),
+    },
   },
   async viteFinal(baseConfig) {
     return mergeConfig(baseConfig, {
