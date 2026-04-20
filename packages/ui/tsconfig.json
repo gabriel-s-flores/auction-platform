@@ -2,8 +2,9 @@
   "extends": "../config/tsconfig/react.json",
   "compilerOptions": {
     "paths": {
+      "@ui": ["./src/index.ts"],
       "@ui/*": ["./src/*"]
     }
   },
-  "include": ["src", "tailwind.config.ts"]
+  "include": ["src", ".storybook/**/*.ts", ".storybook/**/*.tsx", "tailwind.config.ts"]
 }

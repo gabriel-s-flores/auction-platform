@@ -36,6 +36,8 @@
     "typecheck:api": "bun run --filter @auction/api typecheck",
     "typecheck:ui": "bun run --filter @auction/ui typecheck",
     "typecheck:shared-types": "bun run --filter @auction/shared-types typecheck",
+    "storybook": "bun run --filter @auction/ui storybook",
+    "storybook:build": "bun run --filter @auction/ui storybook:build",
     "format": "bunx prettier --write .",
     "prepare": "husky"
   },

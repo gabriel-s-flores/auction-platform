@@ -7,6 +7,8 @@
   "types": "src/index.ts",
   "scripts": {
     "lint": "bunx eslint .",
+    "storybook": "storybook dev -p 6006",
+    "storybook:build": "storybook build",
     "typecheck": "bunx tsc -p tsconfig.json --noEmit"
   },
   "peerDependencies": {
@@ -21,6 +23,13 @@
   },
   "devDependencies": {
     "@auction/config": "workspace:*",
-    "react-router-dom": "^7.0.0"
+    "@storybook/addon-a11y": "10.3.5",
+    "@storybook/addon-docs": "10.3.5",
+    "@storybook/react-vite": "10.3.5",
+    "@tailwindcss/postcss": "4.1.18",
+    "react-router-dom": "^7.0.0",
+    "storybook": "10.3.5",
+    "tailwindcss": "4.1.18",
+    "vite": "7.3.1"
   }
 }
