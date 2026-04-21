@@ -29,5 +29,6 @@ export interface AuctionRepository {
 	findById: (auctionId: string) => Promise<Auction | null>;
 	create: (input: CreateAuctionInput) => Promise<Auction>;
 	close: (auctionId: string, userId: string, isAdmin: boolean) => Promise<CloseAuctionResult>;
+	closeExpiredAuctions: (now: Date) => Promise<string[]>;
 	placeBid: (input: PlaceBidInput) => Promise<PlaceBidResult>;
 }

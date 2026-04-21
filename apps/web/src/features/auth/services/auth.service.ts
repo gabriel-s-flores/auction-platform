@@ -1,3 +1,44 @@
-import type { LoginPayload, LoginRequest, LoginResponse, LogoutResponse,MeResponse, RefreshResponse, RegisterRequest, RegisterResponse,  } from "@auction/shared-types"; 
+import type {
+  LoginPayload,
+  LoginRequest,
+  LoginResponse,
+  LogoutResponse,
+  MeResponse,
+  RefreshResponse,
+  RegisterRequest,
+  RegisterResponse,
+} from "@auction/shared-types";
 
-import { httpClient } from "@/shared/api/http-client"; async function login(payload: LoginRequest): Promise<LoginPayload> { const { data } = await httpClient.post<LoginResponse>("/auth/login", payload); return data.data; } async function register(payload: RegisterRequest): Promise<RegisterResponse["data"]> { const { data } = await httpClient.post<RegisterResponse>("/auth/register", payload); return data.data; } async function logout(): Promise<void> { await httpClient.post<LogoutResponse>("/auth/logout"); } async function getCurrentUser(): Promise<MeResponse["data"]> { const { data } = await httpClient.get<MeResponse>("/auth/me"); return data.data; } async function refreshToken(): Promise<RefreshResponse["data"]> { const { data } = await httpClient.post<RefreshResponse>("/auth/refresh"); return data.data; } export const authService = { login, register, logout, getCurrentUser, refreshToken, };
+import { httpClient } from "@/shared/api/http-client";
+
+async function login(payload: LoginRequest): Promise<LoginPayload> {
+  const { data } = await httpClient.post<LoginResponse>("/auth/login", payload);
+  return data.data;
+}
+
+async function register(payload: RegisterRequest): Promise<RegisterResponse["data"]> {
+  const { data } = await httpClient.post<RegisterResponse>("/auth/register", payload);
+  return data.data;
+}
+
+async function logout(): Promise<void> {
+  await httpClient.post<LogoutResponse>("/auth/logout");
+}
+
+async function getCurrentUser(): Promise<MeResponse["data"]> {
+  const { data } = await httpClient.get<MeResponse>("/auth/me");
+  return data.data;
+}
+
+async function refreshToken(): Promise<RefreshResponse["data"]> {
+  const { data } = await httpClient.post<RefreshResponse>("/auth/refresh");
+  return data.data;
+}
+
+export const authService = {
+  login,
+  register,
+  logout,
+  getCurrentUser,
+  refreshToken,
+};

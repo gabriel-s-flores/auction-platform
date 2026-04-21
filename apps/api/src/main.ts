@@ -5,9 +5,10 @@ import { buildApp } from "#interfaces/http/app";
 async function main() {
  try {
  const app = buildApp();
+  const port = env.PORT ?? env.API_PORT;
 
  // Let Fastify create and manage its own HTTP server
- await app.listen({ host: "0.0.0.0", port: env.API_PORT });
+  await app.listen({ host: "0.0.0.0", port });
 
  // Attach Socket.IO to Fastify's underlying HTTP server
  initWebSocket(app.server);
@@ -15,7 +16,7 @@ async function main() {
  app.log.info(
  {
  event: "api_started",
- url: `http://localhost:${env.API_PORT}`,
+  url: `http://localhost:${port}`,
  appEnv: env.APP_ENV,
  nodeEnv: env.NODE_ENV,
  },

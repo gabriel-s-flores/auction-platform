@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: auction-platform
+    runtime: bun
+    plan: free
+    healthCheckPath: /api/health
+    buildCommand: bun install --frozen-lockfile && bun run --filter @auction/web build && bun run --filter @auction/api prisma:generate
+    startCommand: cd apps/api && bun run start:production
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: APP_ENV
+        value: production
+      - key: SECURE_COOKIES
+        value: "true"
+      - key: LOG_LEVEL
+        value: info
+      - key: VITE_APP_NAME
+        value: Auction Platform
+      - key: CORS_ORIGIN
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: COOKIE_SECRET
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: CRON_SECRET
+        sync: false

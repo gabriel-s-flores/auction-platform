@@ -5,6 +5,13 @@ import { Server as SocketIOServer } from "socket.io";
 // Singleton instance for emitting events
 let io: SocketIOServer | null = null;
 
+function getAllowedOrigins(): string[] {
+  return (process.env.CORS_ORIGIN || "http://localhost:5173")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+}
+
 export interface AuctionExtendedPayload {
  auctionId: string;
  newEndsAt: string;
@@ -29,9 +36,12 @@ export function initWebSocket(httpServer: Server): SocketIOServer<AuctionEvents>
  return io;
  }
 
+  const allowedOrigins = getAllowedOrigins();
+
  io = new SocketIOServer<AuctionEvents>(httpServer, {
  cors: {
- origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+  origin: allowedOrigins.length === 1 ? allowedOrigins[0] : allowedOrigins,
+  credentials: true,
  methods: ["GET", "POST"],
  },
  });

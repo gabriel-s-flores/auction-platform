@@ -1,5 +1,8 @@
 /* eslint-disable sonarjs/deprecation */
 import { randomUUID } from "node:crypto";
+import { existsSync } from "node:fs";
+import { extname, join, relative, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import compress from "@fastify/compress";
 import cookie from "@fastify/cookie";
@@ -38,6 +41,7 @@ import { RejectPendingEditUseCase } from "#application/use-cases/admin/reject-pe
 import { UnbanUserUseCase } from "#application/use-cases/admin/unban-user.use-case";
 import { AuthenticateUserUseCase } from "#application/use-cases/authenticate-user.use-case";
 import { CloseAuctionUseCase } from "#application/use-cases/close-auction.use-case";
+import { CloseExpiredAuctionsUseCase } from "#application/use-cases/close-expired-auctions.use-case";
 import { CreateAuctionUseCase } from "#application/use-cases/create-auction.use-case";
 import { DeleteAuctionImageUseCase } from "#application/use-cases/delete-auction-image.use-case";
 import { GetAuctionByIdUseCase } from "#application/use-cases/get-auction-by-id.use-case";
@@ -80,6 +84,7 @@ import { RejectAuctionController } from "#interfaces/http/controllers/admin/reje
 import { RejectPendingEditController } from "#interfaces/http/controllers/admin/reject-pending-edit.controller";
 import { UnbanUserController } from "#interfaces/http/controllers/admin/unban-user.controller";
 import { CloseAuctionController } from "#interfaces/http/controllers/auctions/close-auction.controller";
+import { CloseExpiredAuctionsController } from "#interfaces/http/controllers/auctions/close-expired-auctions.controller";
 import { CreateAuctionController } from "#interfaces/http/controllers/auctions/create-auction.controller";
 import { GetAuctionByIdController } from "#interfaces/http/controllers/auctions/get-auction-by-id.controller";
 import { ListOpenAuctionsController } from "#interfaces/http/controllers/auctions/list-open-auctions.controller";
@@ -152,6 +157,49 @@ const adminIdSchema = z.object({
 // Cookie names
 const ACCESS_TOKEN_COOKIE = "access_token";
 const REFRESH_TOKEN_COOKIE = "refresh_token";
+const FRONTEND_DIST_PATH = fileURLToPath(new URL("../../../../web/dist", import.meta.url));
+
+function getAllowedOrigins(): string[] {
+ return env.CORS_ORIGIN.split(",")
+ .map((origin) => origin.trim())
+ .filter(Boolean);
+}
+
+function isApiRequest(pathname: string): boolean {
+ return pathname === "/api" || pathname.startsWith("/api/") || pathname.startsWith("/socket.io");
+}
+
+function isStaticAssetRequest(pathname: string): boolean {
+ return extname(pathname) !== "";
+}
+
+function resolveStaticFilePath(pathname: string): string | null {
+ const normalizedPathname = pathname.startsWith("/") ? pathname.slice(1) : pathname;
+  let decodedPathname: string;
+
+  try {
+    decodedPathname = decodeURIComponent(normalizedPathname);
+  } catch {
+    return null;
+  }
+
+ const resolvedPath = resolve(join(FRONTEND_DIST_PATH, decodedPathname));
+  const relativePath = relative(FRONTEND_DIST_PATH, resolvedPath);
+
+  if (relativePath.startsWith("..") || relativePath === "") {
+ return null;
+ }
+
+ return resolvedPath;
+}
+
+async function sendStaticFile(reply: FastifyReply, filePath: string): Promise<FastifyReply> {
+ const file = Bun.file(filePath);
+ const content = Buffer.from(await file.arrayBuffer());
+
+ reply.type(file.type || "application/octet-stream");
+ return reply.send(content);
+}
 
 export function buildApp() {
  const app = Fastify({
@@ -176,10 +224,12 @@ export function buildApp() {
  return reply.status(500).send({ error: "Erro interno" });
  });
 
+ const allowedOrigins = getAllowedOrigins();
+
  app.register(cors, {
- origin: env.CORS_ORIGIN,
+ origin: allowedOrigins.length === 1 ? allowedOrigins[0] : allowedOrigins,
  methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
- allowedHeaders: ["Content-Type", "Authorization"],
+ allowedHeaders: ["Content-Type", "Authorization", "X-Cron-Secret"],
  credentials: true,
  });
 
@@ -306,6 +356,9 @@ export function buildApp() {
  const closeAuctionController = new CloseAuctionController(
  new CloseAuctionUseCase(auctionRepository)
  );
+ const closeExpiredAuctionsController = new CloseExpiredAuctionsController(
+ new CloseExpiredAuctionsUseCase(auctionRepository)
+ );
  const placeBidController = new PlaceBidController(new PlaceBidUseCase(auctionRepository));
 
  // Image controllers
@@ -390,6 +443,8 @@ export function buildApp() {
  new UnbanUserUseCase(userRepository, auditService)
  );
 
+ const hasFrontendBuild = existsSync(FRONTEND_DIST_PATH);
+
  // Helper to set auth cookies
  function setAuthCookies(
  reply: FastifyReply,
@@ -439,12 +494,12 @@ export function buildApp() {
  }
  });
 
- app.get("/health", async () => ({
+ app.get("/api/health", async () => ({
  status: "ok",
  timestamp: new Date().toISOString(),
  }));
 
- app.post("/auth/register", {
+ app.post("/api/auth/register", {
  config: {
  rateLimit: {
  max: 5,
@@ -458,7 +513,7 @@ export function buildApp() {
  return reply.status(201).send({ data: user });
  });
 
- app.post("/auth/login", {
+ app.post("/api/auth/login", {
  config: {
  rateLimit: {
  max: 5,
@@ -498,7 +553,7 @@ export function buildApp() {
  }
  });
 
- app.post("/auth/refresh", async (request, reply) => {
+ app.post("/api/auth/refresh", async (request, reply) => {
  const refreshToken = request.cookies[REFRESH_TOKEN_COOKIE];
  if (!refreshToken) {
  return reply.status(401).send({ error: "Refresh token não encontrado" });
@@ -524,7 +579,7 @@ export function buildApp() {
  }
  });
 
- app.post("/auth/logout", async (request, reply) => {
+ app.post("/api/auth/logout", async (request, reply) => {
  if (request.user) {
  await auditService.log(
  "USER_LOGOUT",
@@ -542,7 +597,7 @@ export function buildApp() {
  return { data: { message: "Logout realizado com sucesso" } };
  });
 
- app.get("/auth/me", async (request, reply) => {
+ app.get("/api/auth/me", async (request, reply) => {
  const accessToken = request.cookies[ACCESS_TOKEN_COOKIE];
  if (!accessToken) {
  return reply.status(401).send({ error: "Não autenticado" });
@@ -564,7 +619,7 @@ export function buildApp() {
  }
  });
 
- app.get("/auctions", async () => {
+ app.get("/api/auctions", async () => {
  const auctions = await listAuctionsController.handle();
  // Fetch images for each auction
  const auctionsWithImages = await Promise.all(
@@ -576,14 +631,14 @@ export function buildApp() {
  return { data: auctionsWithImages };
  });
 
- app.get("/auctions/:auctionId", async (request) => {
+ app.get("/api/auctions/:auctionId", async (request) => {
  const params = auctionIdSchema.parse(request.params);
  const auction = await getAuctionByIdController.handle(params.auctionId);
  const images = await getImagesController.handle(params.auctionId);
  return { data: { ...auction, images } };
  });
 
- app.post("/auctions", async (request, reply) => {
+ app.post("/api/auctions", async (request, reply) => {
  if (!request.user) {
  return reply.status(401).send({ error: "Não autenticado" });
  }
@@ -609,7 +664,7 @@ export function buildApp() {
  return reply.status(201).send({ data: auction });
  });
 
- app.post("/auctions/:auctionId/edits", async (request, reply) => {
+ app.post("/api/auctions/:auctionId/edits", async (request, reply) => {
  if (!request.user) {
  return reply.status(401).send({ error: "Não autenticado" });
  }
@@ -617,7 +672,7 @@ export function buildApp() {
  return submitAuctionEditController.handle(request, reply);
  });
 
- app.patch("/auctions/:auctionId/close", async (request, reply) => {
+ app.patch("/api/auctions/:auctionId/close", async (request, reply) => {
  if (!request.user) {
  return reply.status(401).send({ error: "Não autenticado" });
  }
@@ -644,7 +699,7 @@ export function buildApp() {
  return reply.status(204).send();
  });
 
- app.post("/auctions/:auctionId/bids", async (request, reply) => {
+ app.post("/api/auctions/:auctionId/bids", async (request, reply) => {
  if (!request.user) {
  return reply.status(401).send({ error: "Não autenticado" });
  }
@@ -677,12 +732,12 @@ export function buildApp() {
  });
 
  // Image routes
- app.get("/auctions/:auctionId/images", async (request) => {
+ app.get("/api/auctions/:auctionId/images", async (request) => {
  const params = auctionIdSchema.parse(request.params);
  return { data: await getImagesController.handle(params.auctionId) };
  });
 
- app.post("/auctions/:auctionId/images", async (request, reply) => {
+ app.post("/api/auctions/:auctionId/images", async (request, reply) => {
  if (!request.user) {
  return reply.status(401).send({ error: "Não autenticado" });
  }
@@ -738,7 +793,7 @@ export function buildApp() {
  return reply.status(201).send({ data: result });
  });
 
- app.delete("/auctions/:auctionId/images/:imageId", async (request, reply) => {
+ app.delete("/api/auctions/:auctionId/images/:imageId", async (request, reply) => {
  if (!request.user) {
  return reply.status(401).send({ error: "Não autenticado" });
  }
@@ -767,7 +822,7 @@ export function buildApp() {
  return reply.status(204).send();
  });
 
- app.patch("/auctions/:auctionId/images/reorder", async (request, reply) => {
+ app.patch("/api/auctions/:auctionId/images/reorder", async (request, reply) => {
  if (!request.user) {
  return reply.status(401).send({ error: "Não autenticado" });
  }
@@ -786,57 +841,57 @@ export function buildApp() {
  // ==================== ADMIN ROUTES ====================
 
  // Dashboard stats
- app.get("/admin/dashboard/stats", { preHandler: requireAdmin() }, async (_request, reply) => {
+ app.get("/api/admin/dashboard/stats", { preHandler: requireAdmin() }, async (_request, reply) => {
  return getDashboardStatsController.handle(reply);
  });
 
  // Dashboard recent auctions
- app.get("/admin/dashboard/recent-auctions", { preHandler: requireAdmin() }, async (_request, reply) => {
+ app.get("/api/admin/dashboard/recent-auctions", { preHandler: requireAdmin() }, async (_request, reply) => {
  return listDashboardRecentAuctionsController.handle(reply);
  });
 
  // Activity logs
- app.get("/admin/logs", { preHandler: requireAdmin() }, async (request, reply) => {
+ app.get("/api/admin/logs", { preHandler: requireAdmin() }, async (request, reply) => {
  return listActivityLogsController.handle(request, reply);
  });
 
  // Activity logs export
- app.get("/admin/logs/export", { preHandler: requireAdmin() }, async (request, reply) => {
+ app.get("/api/admin/logs/export", { preHandler: requireAdmin() }, async (request, reply) => {
  return exportActivityLogsController.handle(request, reply);
  });
 
  // Admin notifications
- app.get("/admin/notifications", { preHandler: requireAdmin() }, async (request, reply) => {
+ app.get("/api/admin/notifications", { preHandler: requireAdmin() }, async (request, reply) => {
  return listAdminNotificationsController.handle(request, reply);
  });
 
- app.patch("/admin/notifications/:notificationId/read", { preHandler: requireAdmin() }, async (request, reply) => {
+ app.patch("/api/admin/notifications/:notificationId/read", { preHandler: requireAdmin() }, async (request, reply) => {
  return markAdminNotificationReadController.handle(request, reply);
  });
 
- app.patch("/admin/notifications/:notificationId/unread", { preHandler: requireAdmin() }, async (request, reply) => {
+ app.patch("/api/admin/notifications/:notificationId/unread", { preHandler: requireAdmin() }, async (request, reply) => {
  return markAdminNotificationUnreadController.handle(request, reply);
  });
 
  // Pending auction edits review
- app.get("/admin/edits/pending", { preHandler: requireAdmin() }, async (request, reply) => {
+ app.get("/api/admin/edits/pending", { preHandler: requireAdmin() }, async (request, reply) => {
  return listPendingEditsController.handle(request, reply);
  });
 
- app.patch("/admin/edits/:editId/approve", { preHandler: requireAdmin() }, async (request, reply) => {
+ app.patch("/api/admin/edits/:editId/approve", { preHandler: requireAdmin() }, async (request, reply) => {
  return approvePendingEditController.handle(request, reply);
  });
 
- app.patch("/admin/edits/:editId/reject", { preHandler: requireAdmin() }, async (request, reply) => {
+ app.patch("/api/admin/edits/:editId/reject", { preHandler: requireAdmin() }, async (request, reply) => {
  return rejectPendingEditController.handle(request, reply);
  });
 
  // Admin management (SUPER_ADMIN)
- app.get("/admin/admins", { preHandler: requireSuperAdmin() }, async (_request, reply) => {
+ app.get("/api/admin/admins", { preHandler: requireSuperAdmin() }, async (_request, reply) => {
  return listAdminsController.handle(reply);
  });
 
- app.post("/admin/admins", { preHandler: requireSuperAdmin() }, async (request, reply) => {
+ app.post("/api/admin/admins", { preHandler: requireSuperAdmin() }, async (request, reply) => {
  request.body = createAdminSchema.parse(request.body);
  return createAdminController.handle(
  request as FastifyRequest<{ Body: { name: string; email: string; password: string } }>,
@@ -844,7 +899,7 @@ export function buildApp() {
  );
  });
 
- app.patch("/admin/admins/:adminId/demote", { preHandler: requireSuperAdmin() }, async (request, reply) => {
+ app.patch("/api/admin/admins/:adminId/demote", { preHandler: requireSuperAdmin() }, async (request, reply) => {
  request.params = adminIdSchema.parse(request.params);
  return demoteAdminController.handle(
  request as FastifyRequest<{ Params: { adminId: string } }>,
@@ -853,41 +908,97 @@ export function buildApp() {
  });
 
  // Users management
- app.get("/admin/users", { preHandler: requireAdmin() }, async (request, reply) => {
+ app.get("/api/admin/users", { preHandler: requireAdmin() }, async (request, reply) => {
  return listUsersController.handle(request, reply);
  });
 
- app.get("/admin/users/:userId", { preHandler: requireAdmin() }, async (request, reply) => {
+ app.get("/api/admin/users/:userId", { preHandler: requireAdmin() }, async (request, reply) => {
  return getUserDetailController.handle(request, reply);
  });
 
- app.patch("/admin/users/:userId/ban", { preHandler: requireAdmin() }, async (request, reply) => {
+ app.patch("/api/admin/users/:userId/ban", { preHandler: requireAdmin() }, async (request, reply) => {
  return banUserController.handle(request, reply);
  });
 
- app.patch("/admin/users/:userId/unban", { preHandler: requireAdmin() }, async (request, reply) => {
+ app.patch("/api/admin/users/:userId/unban", { preHandler: requireAdmin() }, async (request, reply) => {
  return unbanUserController.handle(request, reply);
  });
 
- app.patch("/admin/users/:userId/promote", { preHandler: requireSuperAdmin() }, async (request, reply) => {
+ app.patch("/api/admin/users/:userId/promote", { preHandler: requireSuperAdmin() }, async (request, reply) => {
  return promoteUserController.handle(request, reply);
  });
 
  // List pending auctions for approval
- app.get("/admin/auctions/pending", { preHandler: requireAdmin() }, async (request, reply) => {
+ app.get("/api/admin/auctions/pending", { preHandler: requireAdmin() }, async (request, reply) => {
  return listPendingAuctionsController.handle(request, reply);
  });
 
  // Approve an auction
- app.patch("/admin/auctions/:auctionId/approve", { preHandler: requireAdmin() }, async (request, reply) => {
+ app.patch("/api/admin/auctions/:auctionId/approve", { preHandler: requireAdmin() }, async (request, reply) => {
  return approveAuctionController.handle(request, reply);
  });
 
  // Reject an auction
- app.patch("/admin/auctions/:auctionId/reject", { preHandler: requireAdmin() }, async (request, reply) => {
+ app.patch("/api/admin/auctions/:auctionId/reject", { preHandler: requireAdmin() }, async (request, reply) => {
  rejectAuctionSchema.parse(request.body);
  return rejectAuctionController.handle(request, reply);
  });
+
+ app.post("/api/internal/cron/close-expired-auctions", async (request, reply) => {
+ const cronSecret = request.headers["x-cron-secret"];
+
+ if (!env.CRON_SECRET || cronSecret !== env.CRON_SECRET) {
+ return reply.status(401).send({ error: "Não autorizado" });
+ }
+
+ const result = await closeExpiredAuctionsController.handle();
+
+ await Promise.all(
+ result.closedAuctionIds.map((auctionId) =>
+ auditService.log(
+ "AUCTION_AUTO_CLOSED",
+ "auction",
+ auctionId,
+ {
+ processedAt: result.processedAt,
+ trigger: "cron",
+ },
+ {
+ ipAddress: request.ip,
+ userAgent: request.headers["user-agent"],
+ }
+ )
+ )
+ );
+
+ return { data: result };
+ });
+
+ if (hasFrontendBuild) {
+ app.setNotFoundHandler(async (request, reply) => {
+ const pathname = request.url.split("?")[0] || "/";
+
+ if (request.method !== "GET") {
+ return reply.status(404).send({ error: "Rota não encontrada" });
+ }
+
+ if (isStaticAssetRequest(pathname)) {
+ const assetPath = resolveStaticFilePath(pathname);
+
+ if (assetPath && existsSync(assetPath)) {
+ return sendStaticFile(reply, assetPath);
+ }
+
+ return reply.status(404).send({ error: "Arquivo não encontrado" });
+ }
+
+ if (!isApiRequest(pathname)) {
+ return sendStaticFile(reply.type("text/html; charset=utf-8"), join(FRONTEND_DIST_PATH, "index.html"));
+ }
+
+ return reply.status(404).send({ error: "Rota não encontrada" });
+ });
+ }
 
  return app;
 }

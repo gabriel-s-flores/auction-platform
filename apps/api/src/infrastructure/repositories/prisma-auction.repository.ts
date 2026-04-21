@@ -112,6 +112,49 @@ export class PrismaAuctionRepository implements AuctionRepository {
     return "CLOSED";
   }
 
+  async closeExpiredAuctions(now: Date): Promise<string[]> {
+    const expiredAuctions = await prisma.auction.findMany({
+      where: {
+        status: "OPEN",
+        endsAt: { lte: now }
+      },
+      select: {
+        id: true
+      }
+    });
+
+    if (expiredAuctions.length === 0) {
+      return [];
+    }
+
+    const auctionIds = expiredAuctions.map((auction) => auction.id);
+
+    const updates = await prisma.$transaction(
+      auctionIds.map((auctionId) =>
+        prisma.auction.updateMany({
+          where: {
+            id: auctionId,
+            status: "OPEN"
+          },
+          data: {
+            status: "CLOSED",
+            version: { increment: 1 }
+          }
+        })
+      )
+    );
+
+    const closedAuctionIds: string[] = [];
+
+    updates.forEach((update, index) => {
+      if (update.count > 0) {
+        closedAuctionIds.push(auctionIds[index]!);
+      }
+    });
+
+    return closedAuctionIds;
+  }
+
   async placeBid(input: PlaceBidInput): Promise<PlaceBidResult> {
     return prisma.$transaction(
       async (tx: Prisma.TransactionClient) => {

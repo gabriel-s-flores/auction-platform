@@ -4,6 +4,7 @@ const envSchema = z
   .object({
     NODE_ENV: z.enum(["development", "staging", "production", "test"]).default("development"),
     APP_ENV: z.enum(["development", "staging", "production"]).default("development"),
+    PORT: z.coerce.number().optional(),
     API_PORT: z.coerce.number().default(3333),
     CORS_ORIGIN: z.string().default("http://localhost:5173"),
     LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info"),
@@ -19,6 +20,7 @@ const envSchema = z
     CLOUDINARY_CLOUD_NAME: z.string().min(1, "CLOUDINARY_CLOUD_NAME é obrigatório"),
     CLOUDINARY_API_KEY: z.string().min(1, "CLOUDINARY_API_KEY é obrigatório"),
     CLOUDINARY_API_SECRET: z.string().min(1, "CLOUDINARY_API_SECRET é obrigatório"),
+    CRON_SECRET: z.string().min(1).optional(),
     UPLOAD_MAX_SIZE: z.coerce.number().default(10485760), // 10MB
   })
   .refine((data) => data.APP_ENV !== "production" || data.SECURE_COOKIES === true, {

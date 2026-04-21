@@ -1,3 +1,8 @@
-import axios from "axios"; 
+import axios from "axios";
 
-import { env } from "@/shared/config/env"; export const httpClient = axios.create({ baseURL: env.apiBaseUrl, withCredentials: true, });
+import { env } from "@/shared/config/env";
+
+export const httpClient = axios.create({
+  baseURL: env.apiBaseUrl,
+  withCredentials: true,
+});

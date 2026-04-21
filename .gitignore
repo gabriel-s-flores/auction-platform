@@ -20,3 +20,4 @@ coverage
 
 # Security documentation (internal use)
 SECURITY_REMEDIATION.md
+DEPLOY_FREE_TIER.md

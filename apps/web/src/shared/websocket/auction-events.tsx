@@ -38,9 +38,10 @@ export function AuctionEventsProvider({ children }: AuctionEventsProviderProps) 
  const [isConnected, setIsConnected] = useState(false);
 
  useEffect(() => {
- const socket = io(env.apiBaseUrl, {
+ const socket = io(env.apiOrigin, {
  transports: ["websocket"],
  autoConnect: true,
+  withCredentials: true,
  });
 
  socketRef.current = socket;
