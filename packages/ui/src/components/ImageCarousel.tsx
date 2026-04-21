@@ -289,9 +289,7 @@ export function ImageCarousel({ images, className = "" }: ImageCarouselProps) {
                     srcSet={mainImageState.srcSet}
                     sizes={getCarouselSizes()}
                     alt={image.alt || `Imagem ${index + 1}`}
-                    className={`w-full h-full object-cover transition-opacity duration-300 ${
-                      !isLoaded ? "opacity-0" : "opacity-100"
-                    }`}
+                    className="h-full w-full object-cover"
                     loading={index === 0 ? "eager" : "lazy"}
                     onError={() => {
                       handleMainImageError(image);
