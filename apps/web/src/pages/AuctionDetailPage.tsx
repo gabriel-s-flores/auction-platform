@@ -673,11 +673,11 @@ export function AuctionDetailPage() {
         </div>
 
         {/* Right: Auction details - takes 5 columns on large screens */}
-        <div className="space-y-5 lg:col-span-5">
+        <div className="space-y-6 lg:col-span-5">
           {/* Auction info card */}
-          <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+          <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
             {/* Title and status */}
-            <div className="mb-4 flex items-start justify-between gap-4">
+            <div className="mb-5 flex items-start justify-between gap-4">
               <h1 className="text-2xl font-bold leading-tight text-slate-900">{auction.title}</h1>
               <Badge variant={statusBadge.variant} className="flex-shrink-0">
                 {statusBadge.label}
@@ -685,7 +685,7 @@ export function AuctionDetailPage() {
             </div>
 
             {/* Hero countdown - most prominent */}
-            <div className="mb-5">
+            <div className="mb-6">
               <AuctionStatusHero
                 displayEndsAt={displayEndsAt}
                 isAuctionOpen={isAuctionOpen}
