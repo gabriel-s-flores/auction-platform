@@ -25,4 +25,4 @@ WORKDIR /app/apps/api
 
 EXPOSE 3333
 
-CMD ["/bin/sh", "-lc", "./node_modules/.bin/prisma migrate deploy && bun run start:production"]
+CMD ["/bin/sh", "-lc", "bunx prisma migrate deploy && bun run start:production"]
