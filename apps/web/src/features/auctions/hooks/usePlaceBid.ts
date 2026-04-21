@@ -11,7 +11,8 @@ export function usePlaceBid(auctionId: string) {
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["auctions", "open"] }),
-        queryClient.invalidateQueries({ queryKey: ["auctions", auctionId] })
+        queryClient.invalidateQueries({ queryKey: ["auction", auctionId] }),
+        queryClient.invalidateQueries({ queryKey: ["user-panel"] }),
       ]);
     }
   });

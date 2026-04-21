@@ -45,7 +45,12 @@ import { CloseExpiredAuctionsUseCase } from "#application/use-cases/close-expire
 import { CreateAuctionUseCase } from "#application/use-cases/create-auction.use-case";
 import { DeleteAuctionImageUseCase } from "#application/use-cases/delete-auction-image.use-case";
 import { GetAuctionByIdUseCase } from "#application/use-cases/get-auction-by-id.use-case";
+import { GetUserDashboardSummaryUseCase } from "#application/use-cases/get-user-dashboard-summary.use-case";
 import { ListOpenAuctionsUseCase } from "#application/use-cases/list-open-auctions.use-case";
+import { ListUserAuctionsUseCase } from "#application/use-cases/list-user-auctions.use-case";
+import { ListUserBidsUseCase } from "#application/use-cases/list-user-bids.use-case";
+import { ListUserPendingEditsUseCase } from "#application/use-cases/list-user-pending-edits.use-case";
+import { ListUserWinsUseCase } from "#application/use-cases/list-user-wins.use-case";
 import { LoginUserUseCase } from "#application/use-cases/login-user.use-case";
 import { PlaceBidUseCase } from "#application/use-cases/place-bid.use-case";
 import { RegisterUserUseCase } from "#application/use-cases/register-user.use-case";
@@ -96,7 +101,12 @@ import { DeleteAuctionImageController } from "#interfaces/http/controllers/image
 import { GetAuctionImagesController } from "#interfaces/http/controllers/images/get-auction-images.controller";
 import { ReorderAuctionImagesController } from "#interfaces/http/controllers/images/reorder-auction-images.controller";
 import { UploadAuctionImagesController } from "#interfaces/http/controllers/images/upload-auction-images.controller";
-import { requireAdmin, requireSuperAdmin } from "#interfaces/http/middleware/require-role";
+import { GetUserDashboardController } from "#interfaces/http/controllers/users/get-user-dashboard.controller";
+import { ListUserAuctionsController } from "#interfaces/http/controllers/users/list-user-auctions.controller";
+import { ListUserBidsController } from "#interfaces/http/controllers/users/list-user-bids.controller";
+import { ListUserPendingEditsController } from "#interfaces/http/controllers/users/list-user-pending-edits.controller";
+import { ListUserWinsController } from "#interfaces/http/controllers/users/list-user-wins.controller";
+import { requireAdmin, requireAuthenticated, requireSuperAdmin } from "#interfaces/http/middleware/require-role";
 import type { AuthenticatedUser } from "#interfaces/http/types/authenticated-user";
 
 const registerSchema = z.object({
@@ -360,6 +370,21 @@ export function buildApp() {
  new CloseExpiredAuctionsUseCase(auctionRepository)
  );
  const placeBidController = new PlaceBidController(new PlaceBidUseCase(auctionRepository));
+  const getUserDashboardController = new GetUserDashboardController(
+    new GetUserDashboardSummaryUseCase(userRepository, auctionRepository)
+  );
+  const listUserAuctionsController = new ListUserAuctionsController(
+    new ListUserAuctionsUseCase(auctionRepository)
+  );
+  const listUserWinsController = new ListUserWinsController(
+    new ListUserWinsUseCase(auctionRepository)
+  );
+  const listUserBidsController = new ListUserBidsController(
+    new ListUserBidsUseCase(auctionRepository)
+  );
+  const listUserPendingEditsController = new ListUserPendingEditsController(
+    new ListUserPendingEditsUseCase(pendingEditRepository)
+  );
 
  // Image controllers
  const uploadImagesController = new UploadAuctionImagesController(
@@ -837,6 +862,28 @@ export function buildApp() {
 
  return reply.status(204).send();
  });
+
+  // ==================== USER PANEL ROUTES ====================
+
+  app.get("/api/users/me/dashboard", { preHandler: requireAuthenticated() }, async (request, reply) => {
+  return getUserDashboardController.handle(request, reply);
+  });
+
+  app.get("/api/users/me/auctions", { preHandler: requireAuthenticated() }, async (request, reply) => {
+  return listUserAuctionsController.handle(request, reply);
+  });
+
+  app.get("/api/users/me/wins", { preHandler: requireAuthenticated() }, async (request, reply) => {
+  return listUserWinsController.handle(request, reply);
+  });
+
+  app.get("/api/users/me/bids", { preHandler: requireAuthenticated() }, async (request, reply) => {
+  return listUserBidsController.handle(request, reply);
+  });
+
+  app.get("/api/users/me/edits", { preHandler: requireAuthenticated() }, async (request, reply) => {
+  return listUserPendingEditsController.handle(request, reply);
+  });
 
  // ==================== ADMIN ROUTES ====================
 

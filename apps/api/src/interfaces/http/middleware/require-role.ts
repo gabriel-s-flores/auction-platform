@@ -15,16 +15,25 @@ export function requireRole(minRole: UserRole) {
 
     if (!user) {
       reply.status(401).send({ error: "Não autenticado" });
-      return;
-    }
+    } else {
+      const userLevel = ROLE_HIERARCHY[user.role] ?? 0;
+      const requiredLevel = ROLE_HIERARCHY[minRole];
 
-    const userLevel = ROLE_HIERARCHY[user.role] ?? 0;
-    const requiredLevel = ROLE_HIERARCHY[minRole];
-
-    if (userLevel < requiredLevel) {
-      reply.status(403).send({ error: "Acesso negado" });
+      if (userLevel < requiredLevel) {
+        reply.status(403).send({ error: "Acesso negado" });
+      }
     }
  };
+}
+
+export function requireAuthenticated() {
+  return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+    const user = request.user as AuthenticatedUser | undefined;
+
+    if (!user) {
+      reply.status(401).send({ error: "Não autenticado" });
+    }
+  };
 }
 
 export function requireAdmin() {

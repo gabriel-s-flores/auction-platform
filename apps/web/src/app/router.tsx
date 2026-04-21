@@ -13,6 +13,7 @@ import { AuctionsPage } from "@/pages/AuctionsPage";
 import { CreateAuctionPage } from "@/pages/CreateAuctionPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { RegisterPage } from "@/pages/RegisterPage";
+import { UserDashboardPage } from "@/pages/UserDashboardPage";
 import { AdminRoute } from "@/shared/routing/AdminRoute";
 import { ProtectedRoute } from "@/shared/routing/ProtectedRoute";
 
@@ -26,6 +27,14 @@ const router = createBrowserRouter([
  { path: "register", element: <RegisterPage /> },
  { path: "auctions", element: <AuctionsPage /> },
  { path: "auctions/:auctionId", element: <AuctionDetailPage /> },
+  {
+  path: "account",
+  element: (
+  <ProtectedRoute>
+  <UserDashboardPage />
+  </ProtectedRoute>
+  )
+  },
  {
  path: "auctions/new",
  element: (

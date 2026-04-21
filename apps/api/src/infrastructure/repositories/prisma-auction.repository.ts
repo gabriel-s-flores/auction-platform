@@ -7,8 +7,15 @@ import type {
   AuctionRepository,
   CloseAuctionResult,
   CreateAuctionInput,
+  ListUserAuctionsInput,
+  ListUserBidActivityInput,
+  ListUserWinsInput,
   PlaceBidInput,
-  PlaceBidResult
+  PlaceBidResult,
+  UserAuctionListItem,
+  UserBidActivitySummary,
+  UserDashboardSummary,
+  UserWinSummary,
 } from "#domain/repositories/auction-repository";
 import { prisma } from "#infrastructure/database/prisma-client";
 
@@ -87,6 +94,243 @@ export class PrismaAuctionRepository implements AuctionRepository {
     });
 
     return mapAuction(auction);
+  }
+
+  async getUserDashboardSummary(userId: string): Promise<UserDashboardSummary> {
+    const now = new Date();
+
+    const [
+      totalAuctions,
+      activeAuctions,
+      pendingAuctions,
+      closedAuctions,
+      rejectedAuctions,
+      wonAuctionRows,
+      activeBidRows,
+    ] = await Promise.all([
+      prisma.auction.count({
+        where: { sellerId: userId },
+      }),
+      prisma.auction.count({
+        where: {
+          sellerId: userId,
+          status: "OPEN",
+          endsAt: { gt: now },
+        },
+      }),
+      prisma.auction.count({
+        where: {
+          sellerId: userId,
+          status: "PENDING_APPROVAL",
+        },
+      }),
+      prisma.auction.count({
+        where: {
+          sellerId: userId,
+          status: "CLOSED",
+        },
+      }),
+      prisma.auction.count({
+        where: {
+          sellerId: userId,
+          status: "REJECTED",
+        },
+      }),
+      prisma.$queryRaw<Array<{ count: bigint }>>`
+        SELECT COUNT(DISTINCT a.id)::bigint AS "count"
+        FROM "auctions" a
+        INNER JOIN "bids" b ON b."auctionId" = a.id
+        WHERE a."status" = 'CLOSED'::"AuctionStatus"
+          AND b."bidderId" = ${userId}::uuid
+          AND b."amount" = a."highestBid"
+      `,
+      prisma.$queryRaw<Array<{ count: bigint }>>`
+        SELECT COUNT(DISTINCT a.id)::bigint AS "count"
+        FROM "auctions" a
+        INNER JOIN "bids" b ON b."auctionId" = a.id
+        WHERE a."status" = 'OPEN'::"AuctionStatus"
+          AND a."endsAt" > ${now}
+          AND b."bidderId" = ${userId}::uuid
+      `,
+    ]);
+
+    return {
+      totalAuctions,
+      activeAuctions,
+      pendingAuctions,
+      closedAuctions,
+      rejectedAuctions,
+      wonAuctions: Number(wonAuctionRows[0]?.count ?? 0n),
+      activeBidParticipations: Number(activeBidRows[0]?.count ?? 0n),
+    };
+  }
+
+  async listBySeller(input: ListUserAuctionsInput): Promise<{ data: UserAuctionListItem[]; total: number }> {
+    const page = input.page ?? 1;
+    const limit = input.limit ?? 20;
+    const skip = (page - 1) * limit;
+    const where: Prisma.AuctionWhereInput = {
+      sellerId: input.userId,
+      status: input.status,
+    };
+
+    const [auctions, total] = await Promise.all([
+      prisma.auction.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+        include: {
+          _count: {
+            select: {
+              bids: true,
+            },
+          },
+        },
+      }),
+      prisma.auction.count({ where }),
+    ]);
+
+    return {
+      data: auctions.map((auction) => ({
+        ...mapAuction(auction),
+        bidsCount: auction._count.bids,
+      })),
+      total,
+    };
+  }
+
+  async listWinsByBidder(input: ListUserWinsInput): Promise<{ data: UserWinSummary[]; total: number }> {
+    const page = input.page ?? 1;
+    const limit = input.limit ?? 20;
+    const skip = (page - 1) * limit;
+
+    const [rows, countRows] = await Promise.all([
+      prisma.$queryRaw<Array<{
+        auctionId: string;
+        title: string;
+        finalBid: number;
+        endsAt: Date;
+        sellerId: string;
+        sellerName: string;
+      }>>(Prisma.sql`
+        SELECT
+          a.id AS "auctionId",
+          a.title,
+          a."highestBid" AS "finalBid",
+          a."endsAt",
+          a."sellerId",
+          seller.name AS "sellerName"
+        FROM "auctions" a
+        INNER JOIN "users" seller ON seller.id = a."sellerId"
+        WHERE a."status" = 'CLOSED'::"AuctionStatus"
+          AND EXISTS (
+            SELECT 1
+            FROM "bids" b
+            WHERE b."auctionId" = a.id
+              AND b."bidderId" = ${input.userId}::uuid
+              AND b."amount" = a."highestBid"
+          )
+        ORDER BY a."endsAt" DESC
+        LIMIT ${limit}
+        OFFSET ${skip}
+      `),
+      prisma.$queryRaw<Array<{ total: bigint }>>(Prisma.sql`
+        SELECT COUNT(DISTINCT a.id)::bigint AS "total"
+        FROM "auctions" a
+        WHERE a."status" = 'CLOSED'::"AuctionStatus"
+          AND EXISTS (
+            SELECT 1
+            FROM "bids" b
+            WHERE b."auctionId" = a.id
+              AND b."bidderId" = ${input.userId}::uuid
+              AND b."amount" = a."highestBid"
+          )
+      `),
+    ]);
+
+    return {
+      data: rows,
+      total: Number(countRows[0]?.total ?? 0n),
+    };
+  }
+
+  async listBidActivityByUser(
+    input: ListUserBidActivityInput
+  ): Promise<{ data: UserBidActivitySummary[]; total: number }> {
+    const page = input.page ?? 1;
+    const limit = input.limit ?? 20;
+    const skip = (page - 1) * limit;
+    const statusFilter = input.status
+      ? Prisma.sql`WHERE activity."status" = ${input.status}`
+      : Prisma.empty;
+
+    const [rows, countRows] = await Promise.all([
+      prisma.$queryRaw<Array<{
+        auctionId: string;
+        title: string;
+        auctionStatus: PrismaAuctionStatus;
+        auctionEndsAt: Date;
+        sellerName: string;
+        highestBid: number;
+        userHighestBid: number;
+        userBidCount: number;
+        status: UserBidActivitySummary["status"];
+      }>>(Prisma.sql`
+        WITH activity AS (
+          SELECT
+            a.id AS "auctionId",
+            a.title,
+            a."status" AS "auctionStatus",
+            a."endsAt" AS "auctionEndsAt",
+            seller.name AS "sellerName",
+            a."highestBid",
+            MAX(b.amount)::int AS "userHighestBid",
+            COUNT(b.id)::int AS "userBidCount",
+            CASE
+              WHEN a."status" = 'CLOSED'::"AuctionStatus" AND a."highestBid" = MAX(b.amount) THEN 'WON'
+              WHEN a."status" = 'CLOSED'::"AuctionStatus" THEN 'LOST'
+              WHEN a."highestBid" = MAX(b.amount) THEN 'LEADING'
+              ELSE 'OUTBID'
+            END AS "status"
+          FROM "bids" b
+          INNER JOIN "auctions" a ON a.id = b."auctionId"
+          INNER JOIN "users" seller ON seller.id = a."sellerId"
+          WHERE b."bidderId" = ${input.userId}::uuid
+          GROUP BY a.id, seller.name
+        )
+        SELECT *
+        FROM activity
+        ${statusFilter}
+        ORDER BY "auctionEndsAt" DESC
+        LIMIT ${limit}
+        OFFSET ${skip}
+      `),
+      prisma.$queryRaw<Array<{ total: bigint }>>(Prisma.sql`
+        WITH activity AS (
+          SELECT
+            a.id AS "auctionId",
+            CASE
+              WHEN a."status" = 'CLOSED'::"AuctionStatus" AND a."highestBid" = MAX(b.amount) THEN 'WON'
+              WHEN a."status" = 'CLOSED'::"AuctionStatus" THEN 'LOST'
+              WHEN a."highestBid" = MAX(b.amount) THEN 'LEADING'
+              ELSE 'OUTBID'
+            END AS "status"
+          FROM "bids" b
+          INNER JOIN "auctions" a ON a.id = b."auctionId"
+          WHERE b."bidderId" = ${input.userId}::uuid
+          GROUP BY a.id
+        )
+        SELECT COUNT(*)::bigint AS "total"
+        FROM activity
+        ${statusFilter}
+      `),
+    ]);
+
+    return {
+      data: rows,
+      total: Number(countRows[0]?.total ?? 0n),
+    };
   }
 
   async close(auctionId: string, userId: string, isAdmin: boolean): Promise<CloseAuctionResult> {

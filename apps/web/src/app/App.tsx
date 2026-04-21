@@ -40,6 +40,13 @@ export function App() {
             {isAuthenticated ? (
               <>
                 <Link
+                  to="/account"
+                  className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-stone-100 hover:text-slate-900"
+                >
+                  Meu painel
+                </Link>
+
+                <Link
                   to="/auctions/new"
                   className="hidden rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-stone-100 hover:text-slate-900 sm:inline-flex"
                 >

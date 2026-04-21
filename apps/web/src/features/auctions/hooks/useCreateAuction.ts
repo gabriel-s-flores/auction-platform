@@ -9,7 +9,10 @@ export function useCreateAuction() {
   return useMutation({
     mutationFn: (payload: CreateAuctionRequest) => auctionsService.create(payload),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["auctions", "open"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["auctions", "open"] }),
+        queryClient.invalidateQueries({ queryKey: ["user-panel"] }),
+      ]);
     }
   });
 }

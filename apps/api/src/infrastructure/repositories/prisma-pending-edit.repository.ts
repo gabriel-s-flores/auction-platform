@@ -4,8 +4,10 @@ import type { EditStatus, EditType, PendingAuctionEdit } from "#domain/entities/
 import type {
   CreatePendingEditInput,
   ListPendingEditsInput,
+  ListUserPendingEditsInput,
   PendingEditRepository,
   PendingEditSummary,
+  UserPendingEditSummary,
 } from "#domain/repositories/pending-edit-repository";
 import { prisma } from "#infrastructure/database/prisma-client";
 
@@ -60,6 +62,26 @@ function mapPendingEditSummary(model: {
   };
 }
 
+function mapUserPendingEditSummary(model: {
+  id: string;
+  auctionId: string;
+  editType: string;
+  oldValue: Prisma.JsonValue | null;
+  newValue: Prisma.JsonValue;
+  status: string;
+  rejectionReason: string | null;
+  submittedById: string;
+  reviewedById: string | null;
+  reviewedAt: Date | null;
+  createdAt: Date;
+  auction: { title: string };
+}): UserPendingEditSummary {
+  return {
+    ...mapPendingEdit(model),
+    auctionTitle: model.auction.title,
+  };
+}
+
 export class PrismaPendingEditRepository implements PendingEditRepository {
  async create(input: CreatePendingEditInput): Promise<PendingAuctionEdit> {
  const edit = await prisma.pendingAuctionEdit.create({
@@ -104,6 +126,40 @@ export class PrismaPendingEditRepository implements PendingEditRepository {
  total
  };
  }
+
+  async listBySubmittedBy(
+    input: ListUserPendingEditsInput
+  ): Promise<{ data: UserPendingEditSummary[]; total: number }> {
+    const page = input.page ?? 1;
+    const limit = input.limit ?? 20;
+    const skip = (page - 1) * limit;
+    const where: Prisma.PendingAuctionEditWhereInput = {
+      submittedById: input.submittedById,
+      status: input.status,
+    };
+
+    const [edits, total] = await Promise.all([
+      prisma.pendingAuctionEdit.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+        include: {
+          auction: {
+            select: {
+              title: true,
+            },
+          },
+        },
+      }),
+      prisma.pendingAuctionEdit.count({ where }),
+    ]);
+
+    return {
+      data: edits.map(mapUserPendingEditSummary),
+      total,
+    };
+  }
 
  async approve(id: string, reviewedBy: string): Promise<PendingAuctionEdit> {
  const edit = await prisma.pendingAuctionEdit.update({
