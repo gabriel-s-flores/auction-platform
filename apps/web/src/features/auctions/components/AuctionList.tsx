@@ -1,18 +1,51 @@
 import type { AuctionDto } from "@auction/shared-types";
 import { AuctionCard } from "@auction/ui";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 
 import { useAuctions } from "@/features/auctions/hooks/useAuctions";
+import { useCountdownTicker } from "@/features/auctions/hooks/useCountdownTicker";
 
 import { getTimeRemainingState } from "./Countdown";
 
- 
+const ENDING_SOON_THRESHOLD_MS = 5 * 60 * 1000;
+
+interface AuctionListItemViewModel {
+  auction: AuctionDto;
+  timeRemainingMs: number;
+  timeState: ReturnType<typeof getTimeRemainingState>;
+}
+
 const AuctionCardLink = (props: React.ComponentPropsWithRef<typeof Link>) => (
   <Link {...props} />
 );
 
 export function AuctionList() {
   const { data: auctions = [], isLoading, isError } = useAuctions();
+  const currentTimestamp = useCountdownTicker({
+    enabled: !isLoading && !isError && auctions.length > 0,
+  });
+
+  const auctionItems = useMemo<AuctionListItemViewModel[]>(() => {
+    return auctions.map((auction) => {
+      const timeRemainingMs = new Date(auction.endsAt).getTime() - currentTimestamp;
+
+      return {
+        auction,
+        timeRemainingMs,
+        timeState: getTimeRemainingState(timeRemainingMs),
+      };
+    });
+  }, [auctions, currentTimestamp]);
+
+  const endingSoonItems = useMemo(() => {
+    return auctionItems.filter(
+      ({ auction, timeRemainingMs }) =>
+        auction.status === "OPEN" &&
+        timeRemainingMs > 0 &&
+        timeRemainingMs <= ENDING_SOON_THRESHOLD_MS
+    );
+  }, [auctionItems]);
 
   if (isLoading) {
     return (
@@ -67,17 +100,10 @@ export function AuctionList() {
     );
   }
 
-  // Group auctions by urgency
-  const openAuctions = auctions.filter((auction: AuctionDto) => auction.status === "OPEN");
-  const endingSoon = openAuctions.filter((auction: AuctionDto) => {
-    const timeRemaining = new Date(auction.endsAt).getTime() - Date.now();
-    return timeRemaining > 0 && timeRemaining <= 5 * 60 * 1000; // Under 5 minutes
-  });
-
   return (
     <div className="space-y-8">
       {/* Ending Soon Section */}
-      {endingSoon.length > 0 && (
+      {endingSoonItems.length > 0 && (
         <section>
           <div className="mb-4 flex items-center gap-2">
             <span className="relative flex h-2.5 w-2.5">
@@ -86,13 +112,11 @@ export function AuctionList() {
             </span>
             <h3 className="text-lg font-semibold text-rose-700">Terminando em breve</h3>
             <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-700">
-              {endingSoon.length}
+              {endingSoonItems.length}
             </span>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {endingSoon.map((auction: AuctionDto) => {
-              const timeRemaining = new Date(auction.endsAt).getTime() - Date.now();
-              const timeState = getTimeRemainingState(timeRemaining);
+            {endingSoonItems.map(({ auction, timeState }) => {
               return (
                 <AuctionCard
                   key={auction.id}
@@ -110,9 +134,7 @@ export function AuctionList() {
       <section>
         <h3 className="mb-4 text-lg font-semibold text-slate-900">Todos os leilões</h3>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {auctions.map((auction: AuctionDto) => {
-            const timeRemaining = new Date(auction.endsAt).getTime() - Date.now();
-            const timeState = getTimeRemainingState(timeRemaining);
+          {auctionItems.map(({ auction, timeState }) => {
             return (
               <AuctionCard
                 key={auction.id}
