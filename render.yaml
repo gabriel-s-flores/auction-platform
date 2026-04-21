@@ -1,11 +1,10 @@
 services:
   - type: web
     name: auction-platform
-    runtime: bun
+    runtime: docker
     plan: free
+    dockerfilePath: ./Dockerfile.render
     healthCheckPath: /api/health
-    buildCommand: bun install --frozen-lockfile && bun run --filter @auction/web build && bun run --filter @auction/api prisma:generate
-    startCommand: cd apps/api && bun run start:production
     envVars:
       - key: NODE_ENV
         value: production
@@ -15,8 +14,6 @@ services:
         value: "true"
       - key: LOG_LEVEL
         value: info
-      - key: VITE_APP_NAME
-        value: Auction Platform
       - key: CORS_ORIGIN
         sync: false
       - key: DATABASE_URL
