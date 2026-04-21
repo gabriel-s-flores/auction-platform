@@ -74,6 +74,7 @@ function getInitialThumbnailRenderState(image: ImageDto): ThumbnailRenderState {
 }
 
 export function ImageCarousel({ images, className = "" }: ImageCarouselProps) {
+  const carouselAspectRatio = "4 / 3";
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -202,7 +203,8 @@ export function ImageCarousel({ images, className = "" }: ImageCarouselProps) {
   if (!images.length) {
     return (
       <div
-        className={`flex aspect-[4/3] w-full items-center justify-center rounded-lg bg-slate-100 ${className}`}
+        className={`flex w-full items-center justify-center rounded-lg bg-slate-100 ${className}`}
+        style={{ aspectRatio: carouselAspectRatio }}
       >
         <div className="text-center p-8">
           <svg
@@ -241,7 +243,8 @@ export function ImageCarousel({ images, className = "" }: ImageCarouselProps) {
       <div className={`relative ${className}`}>
         {/* Main image */}
         <div
-          className="relative aspect-[4/3] overflow-hidden rounded-lg bg-slate-100 cursor-pointer group"
+          className="relative overflow-hidden rounded-lg bg-slate-100 cursor-pointer group"
+          style={{ aspectRatio: carouselAspectRatio }}
           onClick={openLightbox}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
