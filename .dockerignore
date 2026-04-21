@@ -1,10 +1,26 @@
 node_modules
 dist
+build
+coverage
+storybook-static
 .git
+.DS_Store
+Thumbs.db
+
+# Root env files
 .env
 .env.*
 !.env.example
-coverage
-build
-.DS_Store
-Thumbs.db
+
+# Nested env files inside apps/packages (important for Vite build-time)
+**/.env
+**/.env.*
+!**/.env.example
+
+# Build and cache artifacts across workspaces
+**/dist
+**/build
+**/coverage
+**/storybook-static
+**/*.tsbuildinfo
+**/*.log
