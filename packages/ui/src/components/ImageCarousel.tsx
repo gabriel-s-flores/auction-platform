@@ -1,9 +1,9 @@
-import "yet-another-react-lightbox/styles.css";
-
 import type { ImageDto } from "@auction/shared-types";
-import { useCallback, useState } from "react";
-import Lightbox from "yet-another-react-lightbox";
-import Zoom from "yet-another-react-lightbox/plugins/zoom";
+import type {
+  CSSProperties,
+  TouchEvent as ReactTouchEvent,
+} from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { getThumbnailByPreset } from "../utils/image-utils";
 
@@ -12,15 +12,31 @@ export interface ImageCarouselProps {
   className?: string;
 }
 
-interface MainImageRenderState {
+interface ThumbnailRenderState {
   src: string;
+  hasFallback: boolean;
   hasError: boolean;
 }
 
-interface ThumbnailRenderState {
-  src: string;
-  hasError: boolean;
-}
+const MAIN_FRAME_STYLE: CSSProperties = {
+  aspectRatio: "4 / 3",
+};
+
+const THUMBNAIL_STYLE: CSSProperties = {
+  width: "4rem",
+  height: "4rem",
+};
+
+const PREVIEW_IMAGE_STYLE: CSSProperties = {
+  maxWidth: "min(96vw, 1200px)",
+  maxHeight: "88vh",
+};
+
+const PREVIEW_FALLBACK_STYLE: CSSProperties = {
+  width: "80vw",
+  maxWidth: "80rem",
+  height: "60vh",
+};
 
 function ImageErrorPlaceholder({ compact = false }: { compact?: boolean }) {
   return (
@@ -39,43 +55,149 @@ function ImageErrorPlaceholder({ compact = false }: { compact?: boolean }) {
             d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
           />
         </svg>
-        {!compact && <p className="mt-2 text-sm text-slate-500">Não foi possível carregar a imagem</p>}
+        {compact ? null : (
+          <p className="mt-2 text-sm text-slate-500">Não foi possível carregar a imagem</p>
+        )}
       </div>
     </div>
   );
 }
 
-function getInitialMainImageRenderState(image: ImageDto): MainImageRenderState {
-  return {
-    src: image.url,
-    hasError: false,
-  };
+function getThumbnailSource(image: ImageDto): string {
+  return image.thumbnailUrl || getThumbnailByPreset(image.url, "strip") || image.url;
 }
 
 function getInitialThumbnailRenderState(image: ImageDto): ThumbnailRenderState {
   return {
-    src: image.thumbnailUrl || getThumbnailByPreset(image.url, "strip"),
+    src: getThumbnailSource(image),
+    hasFallback: false,
     hasError: false,
   };
 }
 
+interface NavigationButtonProps {
+  direction: "next" | "prev";
+  onClick: () => void;
+}
+
+function NavigationButton({ direction, onClick }: NavigationButtonProps) {
+  const isNext = direction === "next";
+
+  return (
+    <button
+      type="button"
+      className={`absolute top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/90 p-2 text-slate-700 shadow-md transition hover:bg-white ${
+        isNext ? "right-3" : "left-3"
+      }`}
+      onClick={(event) => {
+        event.stopPropagation();
+        onClick();
+      }}
+      aria-label={isNext ? "Próxima imagem" : "Imagem anterior"}
+    >
+      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d={isNext ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"}
+        />
+      </svg>
+    </button>
+  );
+}
+
 export function ImageCarousel({ images, className = "" }: ImageCarouselProps) {
-  const carouselAspectRatio = "4 / 3";
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
-  const [mainImageStates, setMainImageStates] = useState<Record<string, MainImageRenderState>>({});
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [failedMainImages, setFailedMainImages] = useState<Record<string, boolean>>({});
   const [thumbnailStates, setThumbnailStates] = useState<Record<string, ThumbnailRenderState>>({});
 
-  const minSwipeDistance = 50;
+  const hasMultipleImages = images.length > 1;
 
-  const getMainImageState = useCallback(
-    (image: ImageDto): MainImageRenderState => {
-      return mainImageStates[image.id] ?? getInitialMainImageRenderState(image);
-    },
-    [mainImageStates]
-  );
+  useEffect(() => {
+    setCurrentIndex((previousIndex) => {
+      if (images.length === 0) {
+        return 0;
+      }
+
+      return previousIndex >= images.length ? 0 : previousIndex;
+    });
+  }, [images.length]);
+
+  const currentImage = images[currentIndex];
+
+  const goToSlide = useCallback((index: number) => {
+    setCurrentIndex(index);
+  }, []);
+
+  const goToNext = useCallback(() => {
+    setCurrentIndex((previousIndex) => {
+      if (images.length === 0) {
+        return 0;
+      }
+
+      return (previousIndex + 1) % images.length;
+    });
+  }, [images.length]);
+
+  const goToPrev = useCallback(() => {
+    setCurrentIndex((previousIndex) => {
+      if (images.length === 0) {
+        return 0;
+      }
+
+      return (previousIndex - 1 + images.length) % images.length;
+    });
+  }, [images.length]);
+
+  const closePreview = useCallback(() => {
+    setIsPreviewOpen(false);
+  }, []);
+
+  const openPreview = useCallback(() => {
+    if (!currentImage || failedMainImages[currentImage.id]) {
+      return;
+    }
+
+    setIsPreviewOpen(true);
+  }, [currentImage, failedMainImages]);
+
+  useEffect(() => {
+    if (!isPreviewOpen) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closePreview();
+        return;
+      }
+
+      if (!hasMultipleImages) {
+        return;
+      }
+
+      if (event.key === "ArrowRight") {
+        goToNext();
+      }
+
+      if (event.key === "ArrowLeft") {
+        goToPrev();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [closePreview, goToNext, goToPrev, hasMultipleImages, isPreviewOpen]);
 
   const getThumbnailState = useCallback(
     (image: ImageDto): ThumbnailRenderState => {
@@ -84,85 +206,80 @@ export function ImageCarousel({ images, className = "" }: ImageCarouselProps) {
     [thumbnailStates]
   );
 
-  const handleMainImageError = useCallback((image: ImageDto) => {
-    setMainImageStates((previousStates) => {
-      return {
-        ...previousStates,
-        [image.id]: {
-          src: image.url,
-          hasError: true,
-        },
-      };
-    });
+  const handleMainImageError = useCallback((imageId: string) => {
+    setFailedMainImages((previousState) => ({
+      ...previousState,
+      [imageId]: true,
+    }));
   }, []);
 
   const handleThumbnailError = useCallback((image: ImageDto) => {
     setThumbnailStates((previousStates) => {
+      const currentState = previousStates[image.id] ?? getInitialThumbnailRenderState(image);
+
+      if (!currentState.hasFallback && currentState.src !== image.url) {
+        return {
+          ...previousStates,
+          [image.id]: {
+            src: image.url,
+            hasFallback: true,
+            hasError: false,
+          },
+        };
+      }
+
       return {
         ...previousStates,
         [image.id]: {
           src: image.url,
+          hasFallback: true,
           hasError: true,
         },
       };
     });
   }, []);
 
-  const goToNext = useCallback(() => {
-    setCurrentIndex((prev) => (prev + 1) % images.length);
-  }, [images.length]);
-
-  const goToPrev = useCallback(() => {
-    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
-  }, [images.length]);
-
-  const goToSlide = useCallback((index: number) => {
-    setCurrentIndex(index);
+  const handleTouchStart = useCallback((event: ReactTouchEvent<HTMLElement>) => {
+    const touch = event.targetTouches[0];
+    setTouchStartX(touch?.clientX ?? null);
   }, []);
 
-  const openLightbox = useCallback(() => {
-    setIsLightboxOpen(true);
-  }, []);
+  const handleTouchEnd = useCallback(
+    (event: ReactTouchEvent<HTMLElement>) => {
+      if (!hasMultipleImages || touchStartX === null) {
+        setTouchStartX(null);
+        return;
+      }
 
-  const closeLightbox = useCallback(() => {
-    setIsLightboxOpen(false);
-  }, []);
+      const touch = event.changedTouches[0];
+      if (!touch) {
+        setTouchStartX(null);
+        return;
+      }
 
-  // Touch handlers for mobile swipe on carousel
-  const onTouchStart = (e: React.TouchEvent) => {
-    setTouchEnd(null);
-    const touch = e.targetTouches[0];
-    if (touch) setTouchStart(touch.clientX);
-  };
+      const distance = touchStartX - touch.clientX;
+      if (Math.abs(distance) > 50) {
+        if (distance > 0) {
+          goToNext();
+        } else {
+          goToPrev();
+        }
+      }
 
-  const onTouchMove = (e: React.TouchEvent) => {
-    const touch = e.targetTouches[0];
-    if (touch) setTouchEnd(touch.clientX);
-  };
-
-  const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-
-    if (isLeftSwipe) {
-      goToNext();
-    } else if (isRightSwipe) {
-      goToPrev();
-    }
-  };
+      setTouchStartX(null);
+    },
+    [goToNext, goToPrev, hasMultipleImages, touchStartX]
+  );
 
   if (!images.length) {
     return (
       <div
-        className={`flex w-full items-center justify-center rounded-lg bg-slate-100 ${className}`}
-        style={{ aspectRatio: carouselAspectRatio }}
+        className={`flex w-full items-center justify-center rounded-lg border border-stone-200 bg-slate-100 ${className}`}
+        style={MAIN_FRAME_STYLE}
       >
-        <div className="text-center p-8">
+        <div className="p-8 text-center">
           <svg
-            className="w-12 h-12 mx-auto text-slate-400"
+            className="mx-auto h-12 w-12 text-slate-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -180,168 +297,80 @@ export function ImageCarousel({ images, className = "" }: ImageCarouselProps) {
     );
   }
 
-  const currentImage = images[currentIndex];
   if (!currentImage) {
     return null;
   }
 
-  // Prepare slides for lightbox with high-resolution URLs
-  const slides = images.map((image) => ({
-    src: image.url,
-    alt: image.alt || `Imagem`,
-  }));
+  const currentImageFailed = failedMainImages[currentImage.id] === true;
 
   return (
     <>
-      {/* Main carousel */}
-      <div className={`relative ${className}`}>
-        {/* Main image */}
+      <div className={className}>
         <div
-          className="relative overflow-hidden rounded-lg bg-slate-100 cursor-pointer group"
-          style={{ aspectRatio: carouselAspectRatio }}
-          onClick={openLightbox}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              openLightbox();
-            }
-          }}
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
-          role="button"
-          tabIndex={0}
-          aria-label="Abrir visualização ampliada"
+          className="relative overflow-hidden rounded-lg border border-stone-200 bg-slate-100 shadow-sm"
+          style={MAIN_FRAME_STYLE}
+          aria-label="Galeria de imagens do leilão"
         >
-          {images.map((image, index) => {
-            const mainImageState = getMainImageState(image);
+          {currentImageFailed ? (
+            <ImageErrorPlaceholder />
+          ) : (
+            <button
+              type="button"
+              className="block h-full w-full cursor-zoom-in focus:outline-none"
+              onClick={openPreview}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+              aria-label="Abrir visualização ampliada da imagem"
+            >
+              <img
+                src={currentImage.url}
+                alt={currentImage.alt || `Imagem ${currentIndex + 1}`}
+                className="block h-full w-full object-cover"
+                loading="eager"
+                onError={() => {
+                  handleMainImageError(currentImage.id);
+                }}
+              />
+            </button>
+          )}
 
-            return (
-              <div
-                key={image.id}
-                className={`absolute inset-0 transition-opacity duration-300 ease-out ${
-                  index === currentIndex
-                    ? "opacity-100"
-                    : "opacity-0 pointer-events-none"
-                }`}
-              >
-                {mainImageState.hasError ? (
-                  <ImageErrorPlaceholder />
-                ) : (
-                  <img
-                    src={mainImageState.src}
-                    alt={image.alt || `Imagem ${index + 1}`}
-                    className="h-full w-full object-cover"
-                    loading={index === 0 ? "eager" : "lazy"}
-                    onError={() => {
-                      handleMainImageError(image);
-                    }}
-                  />
-                )}
-              </div>
-            );
-          })}
-
-          {/* Zoom hint overlay on hover */}
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-            <div className="bg-white/90 rounded-full p-3 shadow-lg">
-              <svg
-                className="w-6 h-6 text-slate-700"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
-                />
-              </svg>
+          {currentImage.isPrimary ? (
+            <div className="absolute left-3 top-3 rounded-full bg-primary-600 px-2 py-1 text-xs text-white">
+              Principal
             </div>
-          </div>
+          ) : null}
 
-          {/* Counter badge */}
-          <div className="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
+          <div className="absolute bottom-3 right-3 rounded-full bg-black/60 px-2 py-1 text-xs text-white">
             {currentIndex + 1} / {images.length}
           </div>
 
-          {/* Primary badge */}
-          {currentImage.isPrimary && (
-            <div className="absolute top-3 left-3 bg-primary-600 text-white text-xs px-2 py-1 rounded-full">
-              Principal
-            </div>
-          )}
-
-          {/* Navigation arrows */}
-          {images.length > 1 && (
+          {hasMultipleImages ? (
             <>
-              <button
-                type="button"
-                className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-1.5 shadow-md transition"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  goToPrev();
-                }}
-                aria-label="Imagem anterior"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 19l-7-7 7-7"
-                  />
-                </svg>
-              </button>
-              <button
-                type="button"
-                className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-1.5 shadow-md transition"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  goToNext();
-                }}
-                aria-label="Próxima imagem"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </button>
+              <NavigationButton direction="prev" onClick={goToPrev} />
+              <NavigationButton direction="next" onClick={goToNext} />
             </>
-          )}
+          ) : null}
         </div>
 
-        {/* Thumbnail strip */}
-        {images.length > 1 && (
-          <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
+        {hasMultipleImages ? (
+          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
             {images.map((image, index) => {
               const thumbnailState = getThumbnailState(image);
+              const isSelected = index === currentIndex;
 
               return (
                 <button
                   key={image.id}
                   type="button"
-                  className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition ${
-                    index === currentIndex
+                  className={`relative flex-shrink-0 overflow-hidden rounded-lg border-2 transition ${
+                    isSelected
                       ? "border-primary-600 ring-2 ring-primary-200"
                       : "border-transparent hover:border-slate-300"
                   }`}
+                  style={THUMBNAIL_STYLE}
                   onClick={() => goToSlide(index)}
+                  aria-label={`Selecionar imagem ${index + 1}`}
+                  aria-pressed={isSelected}
                 >
                   {thumbnailState.hasError ? (
                     <ImageErrorPlaceholder compact />
@@ -349,7 +378,7 @@ export function ImageCarousel({ images, className = "" }: ImageCarouselProps) {
                     <img
                       src={thumbnailState.src}
                       alt={image.alt || `Miniatura ${index + 1}`}
-                      className="w-full h-full object-cover"
+                      className="block h-full w-full object-cover"
                       loading="lazy"
                       onError={() => {
                         handleThumbnailError(image);
@@ -360,60 +389,80 @@ export function ImageCarousel({ images, className = "" }: ImageCarouselProps) {
               );
             })}
           </div>
-        )}
+        ) : null}
 
-        {/* Dot indicators */}
-        {images.length > 1 && (
-          <div className="flex justify-center gap-1.5 mt-3">
-            {images.map((_, index) => (
-              <button
-                key={index}
-                type="button"
-                className={`w-2 h-2 rounded-full transition ${
-                  index === currentIndex
-                    ? "bg-primary-600"
-                    : "bg-slate-300 hover:bg-slate-400"
-                }`}
-                onClick={() => goToSlide(index)}
-                aria-label={`Ir para imagem ${index + 1}`}
-              />
-            ))}
+        {hasMultipleImages ? (
+          <div className="mt-3 flex justify-center gap-1.5">
+            {images.map((image, index) => {
+              const isSelected = index === currentIndex;
+
+              return (
+                <button
+                  key={image.id}
+                  type="button"
+                  className={`h-2 w-2 rounded-full transition ${
+                    isSelected ? "bg-primary-600" : "bg-slate-300 hover:bg-slate-400"
+                  }`}
+                  onClick={() => goToSlide(index)}
+                  aria-label={`Ir para imagem ${index + 1}`}
+                  aria-pressed={isSelected}
+                />
+              );
+            })}
           </div>
-        )}
+        ) : null}
       </div>
 
-      {/* Lightbox with zoom */}
-      <Lightbox
-        open={isLightboxOpen}
-        close={closeLightbox}
-        index={currentIndex}
-        slides={slides}
-        plugins={[Zoom]}
-        zoom={{
-          maxZoomPixelRatio: 3,
-          zoomInMultiplier: 2,
-          doubleClickMaxStops: 2,
-          scrollToZoom: true,
-          pinchZoomV4: true,
-        }}
-        styles={{
-          container: { backgroundColor: "rgba(0, 0, 0, 0.9)" },
-        }}
-        on={{
-          view: ({ index }) => setCurrentIndex(index),
-        }}
-        carousel={{
-          finite: false,
-          spacing: "10%",
-        }}
-        controller={{
-          closeOnBackdropClick: true,
-        }}
-        render={{
-          buttonPrev: images.length <= 1 ? () => null : undefined,
-          buttonNext: images.length <= 1 ? () => null : undefined,
-        }}
-      />
+      {isPreviewOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Visualização ampliada da imagem"
+        >
+          <button
+            type="button"
+            className="absolute inset-0 cursor-default bg-transparent"
+            onClick={closePreview}
+            aria-label="Fechar visualização ampliada ao clicar fora da imagem"
+          />
+
+          <button
+            type="button"
+            className="absolute right-4 top-4 z-20 rounded-full bg-white/10 p-2 text-white transition hover:bg-white/20"
+            onClick={closePreview}
+            aria-label="Fechar visualização ampliada"
+          >
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          {hasMultipleImages ? (
+            <>
+              <NavigationButton direction="prev" onClick={goToPrev} />
+              <NavigationButton direction="next" onClick={goToNext} />
+            </>
+          ) : null}
+
+          <div
+            className="relative z-10 flex max-h-full max-w-full items-center justify-center"
+          >
+            {currentImageFailed ? (
+              <div style={PREVIEW_FALLBACK_STYLE}>
+                <ImageErrorPlaceholder />
+              </div>
+            ) : (
+              <img
+                src={currentImage.url}
+                alt={currentImage.alt || `Imagem ${currentIndex + 1}`}
+                className="rounded-lg object-contain"
+                style={PREVIEW_IMAGE_STYLE}
+              />
+            )}
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }
