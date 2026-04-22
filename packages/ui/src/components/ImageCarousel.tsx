@@ -5,13 +5,7 @@ import { useCallback, useState } from "react";
 import Lightbox from "yet-another-react-lightbox";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
 
-import {
-  generateSrcset,
-  getCarouselSizes,
-  getPlaceholderUrl,
-  getResponsiveUrls,
-  getThumbnailByPreset,
-} from "../utils/image-utils";
+import { getThumbnailByPreset } from "../utils/image-utils";
 
 export interface ImageCarouselProps {
   images: ImageDto[];
@@ -20,14 +14,11 @@ export interface ImageCarouselProps {
 
 interface MainImageRenderState {
   src: string;
-  srcSet?: string;
-  hasFallback: boolean;
   hasError: boolean;
 }
 
 interface ThumbnailRenderState {
   src: string;
-  hasFallback: boolean;
   hasError: boolean;
 }
 
@@ -55,20 +46,15 @@ function ImageErrorPlaceholder({ compact = false }: { compact?: boolean }) {
 }
 
 function getInitialMainImageRenderState(image: ImageDto): MainImageRenderState {
-  const urls = getResponsiveUrls(image.url);
-
   return {
-    src: urls.medium || image.url,
-    srcSet: generateSrcset(urls),
-    hasFallback: false,
+    src: image.url,
     hasError: false,
   };
 }
 
 function getInitialThumbnailRenderState(image: ImageDto): ThumbnailRenderState {
   return {
-    src: image.thumbnailUrl || getThumbnailByPreset(image.url, "card"),
-    hasFallback: false,
+    src: image.thumbnailUrl || getThumbnailByPreset(image.url, "strip"),
     hasError: false,
   };
 }
@@ -79,7 +65,6 @@ export function ImageCarousel({ images, className = "" }: ImageCarouselProps) {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
-  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
   const [mainImageStates, setMainImageStates] = useState<Record<string, MainImageRenderState>>({});
   const [thumbnailStates, setThumbnailStates] = useState<Record<string, ThumbnailRenderState>>({});
 
@@ -101,27 +86,10 @@ export function ImageCarousel({ images, className = "" }: ImageCarouselProps) {
 
   const handleMainImageError = useCallback((image: ImageDto) => {
     setMainImageStates((previousStates) => {
-      const currentState = previousStates[image.id] ?? getInitialMainImageRenderState(image);
-
-      if (!currentState.hasFallback && currentState.src !== image.url) {
-        return {
-          ...previousStates,
-          [image.id]: {
-            src: image.url,
-            srcSet: undefined,
-            hasFallback: true,
-            hasError: false,
-          },
-        };
-      }
-
       return {
         ...previousStates,
         [image.id]: {
-          ...currentState,
           src: image.url,
-          srcSet: undefined,
-          hasFallback: true,
           hasError: true,
         },
       };
@@ -130,24 +98,10 @@ export function ImageCarousel({ images, className = "" }: ImageCarouselProps) {
 
   const handleThumbnailError = useCallback((image: ImageDto) => {
     setThumbnailStates((previousStates) => {
-      const currentState = previousStates[image.id] ?? getInitialThumbnailRenderState(image);
-
-      if (!currentState.hasFallback && currentState.src !== image.url) {
-        return {
-          ...previousStates,
-          [image.id]: {
-            src: image.url,
-            hasFallback: true,
-            hasError: false,
-          },
-        };
-      }
-
       return {
         ...previousStates,
         [image.id]: {
           src: image.url,
-          hasFallback: true,
           hasError: true,
         },
       };
@@ -233,7 +187,7 @@ export function ImageCarousel({ images, className = "" }: ImageCarouselProps) {
 
   // Prepare slides for lightbox with high-resolution URLs
   const slides = images.map((image) => ({
-    src: getResponsiveUrls(image.url).xlarge || image.url,
+    src: image.url,
     alt: image.alt || `Imagem`,
   }));
 
@@ -260,8 +214,6 @@ export function ImageCarousel({ images, className = "" }: ImageCarouselProps) {
           aria-label="Abrir visualização ampliada"
         >
           {images.map((image, index) => {
-            const placeholderUrl = getPlaceholderUrl(image.url);
-            const isLoaded = loadedImages.has(image.id);
             const mainImageState = getMainImageState(image);
 
             return (
@@ -273,32 +225,16 @@ export function ImageCarousel({ images, className = "" }: ImageCarouselProps) {
                     : "opacity-0 pointer-events-none"
                 }`}
               >
-                {/* Blur placeholder */}
-                {!isLoaded && !mainImageState.hasError && (
-                  <img
-                    src={placeholderUrl}
-                    alt=""
-                    className="absolute inset-0 w-full h-full object-cover"
-                    style={{ filter: "blur(10px)", transform: "scale(1.1)" }}
-                    aria-hidden="true"
-                  />
-                )}
-
                 {mainImageState.hasError ? (
                   <ImageErrorPlaceholder />
                 ) : (
                   <img
                     src={mainImageState.src}
-                    srcSet={mainImageState.srcSet}
-                    sizes={getCarouselSizes()}
                     alt={image.alt || `Imagem ${index + 1}`}
                     className="h-full w-full object-cover"
                     loading={index === 0 ? "eager" : "lazy"}
                     onError={() => {
                       handleMainImageError(image);
-                    }}
-                    onLoad={() => {
-                      setLoadedImages((prev) => new Set(prev).add(image.id));
                     }}
                   />
                 )}
