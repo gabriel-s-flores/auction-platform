@@ -51,7 +51,7 @@ export function AuctionList() {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <div className="mb-3 h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-amber-600" />
+          <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-amber-600" />
           <p className="text-sm text-slate-600">Carregando leilões...</p>
         </div>
       </div>

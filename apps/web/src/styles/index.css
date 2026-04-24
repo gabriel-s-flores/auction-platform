@@ -120,6 +120,15 @@ background-color: transparent;
 }
 }
 
+@keyframes carousel-image-enter {
+from {
+opacity: 0.35;
+}
+to {
+opacity: 1;
+}
+}
+
 .animate-countdown-pulse {
 animation: countdown-pulse 1s ease-in-out infinite;
 }
@@ -134,6 +143,16 @@ animation: extension-slide 0.3s ease-out;
 
 .animate-bid-highlight {
 animation: bid-highlight 1s ease-out;
+}
+
+.carousel-image-enter {
+animation: carousel-image-enter 220ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+.carousel-image-enter {
+animation: none;
+}
 }
 
 /* Utility classes for auction states */
