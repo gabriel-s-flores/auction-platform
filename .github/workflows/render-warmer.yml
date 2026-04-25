@@ -1,0 +1,33 @@
+name: Render warmer
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "3,13,23,33,43,53 * * * *"
+
+permissions: {}
+
+concurrency:
+  group: render-warmer
+  cancel-in-progress: false
+
+env:
+  RENDER_APP_URL: ${{ vars.RENDER_APP_URL || 'https://auction-platform-p6zt.onrender.com/' }}
+
+jobs:
+  warm-render-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - name: Warm Render app
+        run: |
+          curl --fail --show-error --silent --location \
+            --max-time 60 \
+            --retry 2 \
+            --retry-delay 10 \
+            --retry-all-errors \
+            --output /dev/null \
+            --write-out "Render warmer: %{http_code} in %{time_total}s\n" \
+            -H "User-Agent: github-actions-render-warmer" \
+            "$RENDER_APP_URL"
