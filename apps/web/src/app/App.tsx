@@ -9,7 +9,7 @@ export function App() {
   const canAccessAdmin = user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
 
   return (
-    <div className="min-h-screen bg-stone-50 text-slate-900">
+    <div className="flex min-h-screen flex-col bg-stone-50 text-slate-900">
       <header className="sticky top-0 z-40 border-b border-stone-200 bg-white/80 backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3">
           <Link to="/" className="flex items-center gap-2">
@@ -88,7 +88,7 @@ export function App() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:py-8">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:py-8">
         <Outlet />
       </main>
 
