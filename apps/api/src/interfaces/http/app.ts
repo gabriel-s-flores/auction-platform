@@ -213,6 +213,7 @@ async function sendStaticFile(reply: FastifyReply, filePath: string): Promise<Fa
 
 export function buildApp() {
  const app = Fastify({
+ trustProxy: env.TRUST_PROXY,
  logger: {
  level: env.LOG_LEVEL,
  base: {

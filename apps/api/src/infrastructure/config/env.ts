@@ -17,6 +17,7 @@ const envSchema = z
       .min(32, "COOKIE_SECRET deve ter ao menos 32 caracteres")
       .default("change-this-cookie-secret-in-production-32chars"),
     SECURE_COOKIES: z.coerce.boolean().default(false),
+    TRUST_PROXY: z.coerce.boolean().default(false),
     CLOUDINARY_CLOUD_NAME: z.string().min(1, "CLOUDINARY_CLOUD_NAME é obrigatório"),
     CLOUDINARY_API_KEY: z.string().min(1, "CLOUDINARY_API_KEY é obrigatório"),
     CLOUDINARY_API_SECRET: z.string().min(1, "CLOUDINARY_API_SECRET é obrigatório"),
