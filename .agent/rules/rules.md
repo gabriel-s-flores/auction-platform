@@ -144,6 +144,7 @@ Também é obrigatório:
 - respeitar ESLint + Prettier + EditorConfig do repositório;
 - manter commits no padrão Conventional Commits (commitlint);
 - manter PR pequeno, com objetivo claro e descrição técnica.
+- toda feature nova implementada por agente deve incluir testes automatizados cobrindo o comportamento entregue; se não for tecnicamente possível, documentar o motivo e o risco residual no PR.
 
 ## 10) Regras de ambiente e operação local
 
@@ -167,6 +168,7 @@ bun run staging
 - [ ] Segurança revisada (validação, auth, segredos, erros)
 - [ ] Performance revisada (queries, payloads, renderização)
 - [ ] Contratos/tipos atualizados quando necessário
+- [ ] Features novas implementadas por agente possuem testes automatizados correspondentes
 - [ ] `bun run lint` sem erros
 - [ ] `bun run typecheck` sem erros
 - [ ] Sem código morto, logs temporários ou comentários de debug
