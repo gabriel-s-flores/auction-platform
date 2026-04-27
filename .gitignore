@@ -8,6 +8,8 @@ storybook-static
 .idea
 .vscode/*.code-workspace
 coverage
+test-results
+playwright-report
 
 # env
 .env

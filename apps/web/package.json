@@ -10,6 +10,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "bunx eslint .",
+    "test": "vitest run --config vitest.config.ts",
+    "test:e2e": "playwright test --config playwright.config.ts",
+    "test:watch": "vitest --config vitest.config.ts",
     "typecheck": "bunx tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

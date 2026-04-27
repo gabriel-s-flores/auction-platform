@@ -1,4 +1,10 @@
-.PHONY: help setup dev down clean logs shell-api shell-web migrate seed
+POSTGRES_USER ?= admin
+POSTGRES_PASSWORD ?= admin
+POSTGRES_DB ?= auction_dev
+POSTGRES_TEST_DB ?= auction_test
+TEST_DATABASE_URL_DOCKER ?= postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/$(POSTGRES_TEST_DB)?schema=public
+
+.PHONY: help setup dev down clean logs shell-api shell-web migrate seed test test-db test-db-migrate test-integration test-all
 
 help:
 	@echo "Available commands:"
@@ -11,6 +17,10 @@ help:
 	@echo "  make shell-web  - Open bash in web container"
 	@echo "  make migrate    - Run prisma migrations"
 	@echo "  make seed       - Run database seed"
+	@echo "  make test       - Run fast automated tests"
+	@echo "  make test-db    - Create the integration test database"
+	@echo "  make test-integration - Run database integration tests"
+	@echo "  make test-all   - Run fast tests and database integration tests"
 
 setup:
 	docker compose build
@@ -55,3 +65,21 @@ migrate:
 
 seed:
 	docker compose run --rm api bun run db:seed
+
+test:
+	bun run test
+
+test-db:
+	docker compose up -d postgres
+	@echo "Waiting for postgres to be ready..."
+	@until docker compose exec -T postgres pg_isready -U $(POSTGRES_USER) -d $(POSTGRES_DB) >/dev/null 2>&1; do sleep 1; done
+	docker compose exec -T postgres sh -lc 'createdb -U "$${POSTGRES_USER:-admin}" "$(POSTGRES_TEST_DB)" 2>/dev/null || true'
+	@echo "Test database '$(POSTGRES_TEST_DB)' is ready."
+
+test-db-migrate: test-db
+	docker compose run --rm -e DATABASE_URL="$(TEST_DATABASE_URL_DOCKER)" api bun run prisma:migrate:deploy
+
+test-integration: test-db-migrate
+	docker compose run --rm -e DATABASE_URL="$(TEST_DATABASE_URL_DOCKER)" -e TEST_DATABASE_URL="$(TEST_DATABASE_URL_DOCKER)" -e NODE_ENV=test api bun run test:integration
+
+test-all: test test-integration

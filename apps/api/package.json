@@ -15,6 +15,12 @@
     "start:staging": "bun run prisma:generate && bun --env-file=.env.staging src/main.ts",
     "start:production": "bun src/main.ts",
     "lint": "bunx eslint .",
+    "test": "bun run test:unit && bun run test:contracts && bun run test:infra",
+    "test:unit": "bun test src/application",
+    "test:contracts": "bun test src/interfaces",
+    "test:infra": "bun test src/infrastructure",
+    "test:integration": "bun test src/integration --timeout 30000",
+    "test:coverage": "bun test src/application src/interfaces src/infrastructure --coverage",
     "typecheck": "bunx tsc -p tsconfig.json --noEmit",
     "prisma:generate": "bunx prisma generate",
     "prisma:migrate:dev": "bunx prisma migrate dev",
@@ -44,7 +50,8 @@
   "devDependencies": {
     "@auction/config": "workspace:*",
     "@types/pg": "8.16.0",
-    "prisma": "7.4.0"
+    "prisma": "7.4.0",
+    "socket.io-client": "4.8.3"
   },
   "prisma": {
     "seed": "bun run prisma/seed.ts"

@@ -9,6 +9,9 @@
     "lint": "bunx eslint .",
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build",
+    "test": "vitest run --config vitest.config.ts",
+    "test:storybook": "storybook build",
+    "test:watch": "vitest --config vitest.config.ts",
     "typecheck": "bunx tsc -p tsconfig.json --noEmit"
   },
   "peerDependencies": {

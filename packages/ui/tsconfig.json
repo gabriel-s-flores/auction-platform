@@ -6,5 +6,11 @@
       "@ui/*": ["./src/*"]
     }
   },
-  "include": ["src", ".storybook/**/*.ts", ".storybook/**/*.tsx", "tailwind.config.ts"]
+  "include": [
+    "src",
+    ".storybook/**/*.ts",
+    ".storybook/**/*.tsx",
+    "tailwind.config.ts",
+    "vitest.config.ts"
+  ]
 }
