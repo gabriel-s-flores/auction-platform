@@ -603,7 +603,7 @@ export function ImageCarousel({ images, className = "" }: ImageCarouselProps) {
         </div>
 
         {hasMultipleImages ? (
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+          <div className="mt-3 flex justify-center gap-2 pb-2">
             {images.map((image, index) => {
               const thumbnailState = getThumbnailState(image);
               const isSelected = index === currentIndex;
@@ -612,12 +612,20 @@ export function ImageCarousel({ images, className = "" }: ImageCarouselProps) {
                 <button
                   key={image.id}
                   type="button"
-                  className={`relative flex-shrink-0 overflow-hidden rounded-lg border-2 transition ${
+                  className={`relative flex-shrink-0 rounded-lg transition ${
                     isSelected
-                      ? "border-primary-600 ring-2 ring-primary-200"
-                      : "border-transparent hover:border-slate-300"
+                      ? ""
+                      : "border-2 border-transparent hover:border-slate-300"
                   }`}
-                  style={THUMBNAIL_STYLE}
+                  style={{
+                    ...THUMBNAIL_STYLE,
+                    ...(isSelected
+                      ? {
+                          border: "2px solid #2d5bff",
+                          boxShadow: "0 0 0 3px rgba(45, 91, 255, 0.35)",
+                        }
+                      : {}),
+                  }}
                   onClick={() => goToSlide(index)}
                   aria-label={`Selecionar imagem ${index + 1}`}
                   aria-pressed={isSelected}
@@ -628,7 +636,7 @@ export function ImageCarousel({ images, className = "" }: ImageCarouselProps) {
                     <img
                       src={thumbnailState.src}
                       alt={image.alt || `Miniatura ${index + 1}`}
-                      className="block h-full w-full object-cover"
+                      className="block h-full w-full rounded-md object-cover"
                       loading="lazy"
                       onError={() => {
                         handleThumbnailError(image);
@@ -642,7 +650,7 @@ export function ImageCarousel({ images, className = "" }: ImageCarouselProps) {
         ) : null}
 
         {hasMultipleImages ? (
-          <div className="mt-3 flex justify-center gap-1.5">
+          <div className="mt-2 flex justify-center gap-1.5 pb-2">
             {images.map((image, index) => {
               const isSelected = index === currentIndex;
 

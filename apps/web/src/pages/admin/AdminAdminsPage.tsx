@@ -123,8 +123,8 @@ export function AdminAdminsPage() {
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="mb-6 flex flex-col gap-2">
+    <div className="space-y-6">
+      <div>
         <h1 className="text-2xl font-bold">Gestão de admins</h1>
         <p className="text-sm text-slate-500">
           Área exclusiva de SUPER_ADMIN para criação e rebaixamento de contas administrativas.
@@ -132,13 +132,13 @@ export function AdminAdminsPage() {
       </div>
 
       {adminsQuery.error ? (
-        <Alert variant="error" className="mb-6">
+        <Alert variant="error">
           {getErrorMessage(adminsQuery.error, "Não foi possível carregar os admins")}
         </Alert>
       ) : null}
 
       {actionErrorMessage ? (
-        <Alert variant="error" className="mb-6">
+        <Alert variant="error">
           {actionErrorMessage}
         </Alert>
       ) : null}

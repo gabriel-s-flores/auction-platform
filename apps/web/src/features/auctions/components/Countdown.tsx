@@ -314,7 +314,7 @@ function HeroCountdown({ timeState }: { timeState: ReturnType<typeof getTimeRema
   );
 
   return (
-    <div className="rounded-2xl border border-stone-200 bg-stone-50/80 p-4 sm:p-5">
+    <div className="rounded-2xl border border-stone-200 bg-stone-50/80 p-4 sm:p-6">
       <div className="flex flex-col gap-4">
         <div className="flex items-start gap-3 sm:gap-4">
           <div className={`rounded-full p-2.5 ${getTimerIconBgClass(timeState.isCritical)}`}>

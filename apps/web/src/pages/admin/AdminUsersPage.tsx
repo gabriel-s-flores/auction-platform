@@ -519,15 +519,15 @@ export function AdminUsersPage() {
     : null;
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="mb-6 flex flex-col gap-2">
+    <div className="space-y-6">
+      <div>
         <h1 className="text-2xl font-bold">Gestão de usuários</h1>
         <p className="text-sm text-slate-500">
           Consulte usuários cadastrados, revise seus indicadores e aplique ações administrativas.
         </p>
       </div>
 
-      <Card className="mb-6 p-6">
+      <Card className="p-6">
         <form
           className="space-y-4"
           onSubmit={(event) => {
@@ -596,13 +596,13 @@ export function AdminUsersPage() {
       </Card>
 
       {usersQuery.error ? (
-        <Alert variant="error" className="mb-6">
+        <Alert variant="error">
           {getErrorMessage(usersQuery.error, "Não foi possível carregar os usuários")}
         </Alert>
       ) : null}
 
       {actionErrorMessage ? (
-        <Alert variant="error" className="mb-6">
+        <Alert variant="error">
           {actionErrorMessage}
         </Alert>
       ) : null}

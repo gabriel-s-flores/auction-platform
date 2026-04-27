@@ -166,8 +166,8 @@ export function AdminDashboardPage() {
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="mb-6 flex flex-col gap-2">
+    <div className="space-y-6">
+      <div>
         <h1 className="text-2xl font-bold">Painel de Administrador</h1>
         <p className="text-sm text-slate-500">
           Acompanhe métricas gerais da plataforma e os leilões mais recentes.
@@ -175,12 +175,12 @@ export function AdminDashboardPage() {
       </div>
 
       {statsQuery.error ? (
-        <Alert variant="error" className="mb-6">
+        <Alert variant="error">
           {getErrorMessage(statsQuery.error, "Não foi possível carregar as métricas do painel")}
         </Alert>
       ) : null}
 
-      <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <StatCard
           title="Leilões Pendentes"
           value={statsQuery.isLoading ? "..." : stats?.pendingAuctions ?? 0}
@@ -267,24 +267,22 @@ export function AdminDashboardPage() {
         <ActivitySummary stats={stats} />
       </div>
 
-      <div className="mt-8">
-        <Card className="p-6">
-          <div className="mb-4 flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-semibold">Leilões Recentes</h2>
-              <p className="text-sm text-slate-500">
-                Últimos cadastros e alterações de status disponíveis no painel.
-              </p>
-            </div>
-
-            <Link to="/admin/auctions/pending">
-              <Button variant="secondary">Ver pendentes</Button>
-            </Link>
+      <Card className="p-6">
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold">Leilões Recentes</h2>
+            <p className="text-sm text-slate-500">
+              Últimos cadastros e alterações de status disponíveis no painel.
+            </p>
           </div>
 
-          {recentAuctionsContent}
-        </Card>
-      </div>
+          <Link to="/admin/auctions/pending">
+            <Button variant="secondary">Ver pendentes</Button>
+          </Link>
+        </div>
+
+        {recentAuctionsContent}
+      </Card>
     </div>
   );
 }

@@ -34,8 +34,8 @@ export function AdminPendingAuctionsPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-4">
-        <h1 className="mb-4 text-2xl font-bold">Leilões Pendentes de Aprovação</h1>
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold">Leilões Pendentes de Aprovação</h1>
         <p>Carregando...</p>
       </div>
     );
@@ -43,8 +43,8 @@ export function AdminPendingAuctionsPage() {
 
   if (error) {
     return (
-      <div className="container mx-auto p-4">
-        <h1 className="mb-4 text-2xl font-bold">Leilões Pendentes de Aprovação</h1>
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold">Leilões Pendentes de Aprovação</h1>
         <Alert variant="error">Erro ao carregar leilões pendentes</Alert>
       </div>
     );
@@ -54,8 +54,8 @@ export function AdminPendingAuctionsPage() {
   const totalPages = data?.pagination.totalPages ?? 0;
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="mb-4 text-2xl font-bold">Leilões Pendentes de Aprovação</h1>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">Leilões Pendentes de Aprovação</h1>
 
       {auctions.length === 0 ? (
         <Card className="p-6">

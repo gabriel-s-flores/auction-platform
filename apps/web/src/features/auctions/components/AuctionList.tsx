@@ -101,7 +101,7 @@ export function AuctionList() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Ending Soon Section */}
       {endingSoonItems.length > 0 && (
         <section>

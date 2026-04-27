@@ -111,8 +111,8 @@ export function AdminNotificationsPage() {
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="mb-6 flex flex-col gap-2">
+    <div className="space-y-6">
+      <div>
         <h1 className="text-2xl font-bold">Notificações administrativas</h1>
         <p className="text-sm text-slate-500">
           Acompanhe eventos recentes relevantes para a operação administrativa.
@@ -121,13 +121,13 @@ export function AdminNotificationsPage() {
       </div>
 
       {notificationsQuery.error ? (
-        <Alert variant="error" className="mb-6">
+        <Alert variant="error">
           {getErrorMessage(notificationsQuery.error, "Não foi possível carregar as notificações")}
         </Alert>
       ) : null}
 
       {mutationErrorMessage ? (
-        <Alert variant="error" className="mb-6">
+        <Alert variant="error">
           {mutationErrorMessage}
         </Alert>
       ) : null}

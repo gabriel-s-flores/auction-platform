@@ -119,7 +119,7 @@ function getEditStatusVariant(status: UserEditStatus): StatusBadgeVariant {
 
 function SummaryCard({ label, value, hint }: { label: string; value: number | string; hint: string }) {
   return (
-    <Card className="p-5">
+    <Card className="p-6">
       <p className="text-sm font-medium text-slate-500">{label}</p>
       <p className="mt-2 text-3xl font-bold text-slate-900">{value}</p>
       <p className="mt-1 text-xs text-slate-500">{hint}</p>

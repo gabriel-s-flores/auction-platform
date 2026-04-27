@@ -79,8 +79,8 @@ export function AdminPendingEditsPage() {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="mb-6 flex flex-col gap-2">
+    <div className="space-y-6">
+      <div>
         <h1 className="text-2xl font-bold">Edições pendentes de revisão</h1>
         <p className="text-sm text-slate-500">
           Aprove ou rejeite alterações de leilões enviadas para revisão administrativa.
@@ -88,13 +88,13 @@ export function AdminPendingEditsPage() {
       </div>
 
       {pendingEditsQuery.error ? (
-        <Alert variant="error" className="mb-6">
+        <Alert variant="error">
           {getErrorMessage(pendingEditsQuery.error, "Não foi possível carregar as edições pendentes")}
         </Alert>
       ) : null}
 
       {mutationErrorMessage ? (
-        <Alert variant="error" className="mb-6">
+        <Alert variant="error">
           {mutationErrorMessage}
         </Alert>
       ) : null}
@@ -147,7 +147,7 @@ export function AdminPendingEditsPage() {
                 </div>
               </div>
 
-              <div className="flex min-w-64 flex-col gap-2">
+              <div className="flex flex-col gap-2 md:min-w-48">
                 {rejectingId === edit.id ? (
                   <>
                     <Input

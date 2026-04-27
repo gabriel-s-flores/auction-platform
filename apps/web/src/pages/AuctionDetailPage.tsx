@@ -224,7 +224,7 @@ function OpenAuctionBidCard({
   onSubmitBid,
 }: OpenAuctionBidCardProps) {
   return (
-    <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
       <h3 className="mb-4 text-lg font-semibold text-slate-900">Enviar lance</h3>
 
       {placeBidState.isError ? (
@@ -319,7 +319,7 @@ function AuctionActionPanel({
     }
 
     return (
-      <div className="rounded-2xl border border-sky-200 bg-sky-50 px-5 py-6 text-center">
+      <div className="rounded-2xl border border-sky-200 bg-sky-50 p-6 text-center">
         <svg
           className="mx-auto mb-3 h-8 w-8 text-sky-500"
           fill="none"
@@ -353,7 +353,7 @@ function AuctionActionPanel({
         icon="info"
         title="Leilão em revisão"
         message="Este item está aguardando aprovação administrativa e ainda não pode receber lances."
-        className="p-5 shadow-sm"
+        className="p-6 shadow-sm"
       />
     );
   }
@@ -368,7 +368,7 @@ function AuctionActionPanel({
           rejectionReason?.trim() ||
           "Este item não foi aprovado pela administração e permanece indisponível para lances."
         }
-        className="p-5 shadow-sm"
+        className="p-6 shadow-sm"
       />
     );
   }
@@ -379,7 +379,7 @@ function AuctionActionPanel({
       icon="clock"
       title="Leilão encerrado"
       message="Este item não aceita mais lances e permanece disponível apenas para consulta."
-      className="p-5 shadow-sm"
+      className="p-6 shadow-sm"
     />
   );
 }
@@ -582,7 +582,7 @@ export function AuctionDetailPage() {
         {/* Left: Image carousel - takes 7 columns on large screens */}
         <div className="lg:col-span-7">
           <div className="lg:sticky lg:top-6">
-            <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
+            <div className="rounded-2xl border border-stone-200 bg-white shadow-sm">
               <ImageCarousel images={images} className="w-full" />
             </div>
 
@@ -675,7 +675,7 @@ export function AuctionDetailPage() {
         {/* Right: Auction details - takes 5 columns on large screens */}
         <div className="space-y-6 lg:col-span-5">
           {/* Auction info card */}
-          <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
+          <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
             {/* Title and status */}
             <div className="mb-5 flex items-start justify-between gap-4">
               <h1 className="text-2xl font-bold leading-tight text-slate-900">{auction.title}</h1>

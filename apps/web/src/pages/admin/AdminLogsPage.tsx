@@ -190,15 +190,15 @@ export function AdminLogsPage() {
   })();
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="mb-6 flex flex-col gap-2">
+    <div className="space-y-6">
+      <div>
         <h1 className="text-2xl font-bold">Logs de atividade</h1>
         <p className="text-sm text-slate-500">
           Consulte eventos administrativos e operacionais registrados na plataforma.
         </p>
       </div>
 
-      <Card className="mb-6 p-6">
+      <Card className="p-6">
         <form
           className="space-y-4"
           onSubmit={(event) => {
@@ -298,13 +298,13 @@ export function AdminLogsPage() {
       </Card>
 
       {logsQuery.error ? (
-        <Alert variant="error" className="mb-6">
+        <Alert variant="error">
           {getErrorMessage(logsQuery.error, "Não foi possível carregar os logs")}
         </Alert>
       ) : null}
 
       {exportLogsMutation.error ? (
-        <Alert variant="error" className="mb-6">
+        <Alert variant="error">
           {getErrorMessage(exportLogsMutation.error, "Não foi possível exportar os logs")}
         </Alert>
       ) : null}
