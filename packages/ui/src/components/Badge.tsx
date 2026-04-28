@@ -1,9 +1,12 @@
-import type { HTMLAttributes, PropsWithChildren } from "react";
+import { type HTMLMotionProps,motion } from "framer-motion";
+import type { PropsWithChildren } from "react";
+
+import { popIn } from "../utils/animation-utils";
 
 type BadgeVariant = "neutral" | "success" | "danger";
 
 export type BadgeProps = PropsWithChildren<
-  HTMLAttributes<HTMLSpanElement> & {
+  HTMLMotionProps<"span"> & {
     variant?: BadgeVariant;
   }
 >;
@@ -16,8 +19,14 @@ const variantStyles: Record<BadgeVariant, string> = {
 
 export function Badge({ children, className = "", variant = "neutral", ...props }: BadgeProps) {
   return (
-    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${variantStyles[variant]} ${className}`} {...props}>
+    <motion.span
+      className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${variantStyles[variant]} ${className}`}
+      variants={popIn}
+      initial="hidden"
+      animate="visible"
+      {...props}
+    >
       {children}
-    </span>
+    </motion.span>
   );
 }

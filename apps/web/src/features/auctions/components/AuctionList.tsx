@@ -1,5 +1,6 @@
 import type { AuctionDto } from "@auction/shared-types";
-import { AuctionCard } from "@auction/ui";
+import { AuctionCard, staggerContainer } from "@auction/ui";
+import { motion } from "framer-motion";
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 
@@ -115,7 +116,12 @@ export function AuctionList() {
               {endingSoonItems.length}
             </span>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <motion.div
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
             {endingSoonItems.map(({ auction, timeState }) => {
               return (
                 <AuctionCard
@@ -126,14 +132,19 @@ export function AuctionList() {
                 />
               );
             })}
-          </div>
+          </motion.div>
         </section>
       )}
 
       {/* All Auctions Section */}
       <section>
         <h3 className="mb-4 text-lg font-semibold text-slate-900">Todos os leilões</h3>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <motion.div
+          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+        >
           {auctionItems.map(({ auction, timeState }) => {
             return (
               <AuctionCard
@@ -144,7 +155,7 @@ export function AuctionList() {
               />
             );
           })}
-        </div>
+        </motion.div>
       </section>
     </div>
   );

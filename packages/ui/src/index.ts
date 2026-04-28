@@ -8,4 +8,5 @@ export * from "./components/ImageUploader";
 export * from "./components/Input";
 export * from "./components/Label";
 export * from "./components/ResponsiveImage";
+export * from "./utils/animation-utils";
 export * from "./utils/image-utils";

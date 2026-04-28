@@ -1,9 +1,12 @@
-import type { ButtonHTMLAttributes, PropsWithChildren } from "react";
+import { type HTMLMotionProps,motion } from "framer-motion";
+import type { PropsWithChildren } from "react";
+
+import { SPRING_SNAPPY } from "../utils/animation-utils";
 
 type ButtonVariant = "primary" | "secondary";
 
 export type ButtonProps = PropsWithChildren<
-  ButtonHTMLAttributes<HTMLButtonElement> & {
+  HTMLMotionProps<"button"> & {
     variant?: ButtonVariant;
   }
 >;
@@ -15,11 +18,13 @@ const variantStyles: Record<ButtonVariant, string> = {
 
 export function Button({ children, className = "", variant = "primary", ...props }: ButtonProps) {
   return (
-    <button
+    <motion.button
       className={`inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition ${variantStyles[variant]} ${className}`}
+      whileHover={{ scale: 1.02, transition: SPRING_SNAPPY }}
+      whileTap={{ scale: 0.96, transition: SPRING_SNAPPY }}
       {...props}
     >
       {children}
-    </button>
+    </motion.button>
   );
 }

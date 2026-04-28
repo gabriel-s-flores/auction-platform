@@ -17,7 +17,11 @@ RUN bun install --frozen-lockfile
 COPY apps/api ./apps/api
 
 # Generate Prisma Client
+# DATABASE_URL is required by prisma.config.ts but prisma generate
+# does not connect to the database — it only generates client code.
+# The real DATABASE_URL is provided at runtime via docker-compose.
 WORKDIR /app/apps/api
+ENV DATABASE_URL="postgresql://localhost:5432/placeholder?schema=public"
 RUN bun run prisma:generate
 
 # Expose API port
