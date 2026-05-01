@@ -9,7 +9,8 @@ import type {
   UserPendingEditDto,
   UserWinDto,
 } from "@auction/shared-types";
-import { Alert, Badge, Button, Card } from "@auction/ui";
+import { Alert, Badge, Button, Card, staggerContainerCards } from "@auction/ui";
+import { motion } from "framer-motion";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -214,7 +215,12 @@ function AccountOverview({ summary }: { summary: UserDashboardSummaryDto }) {
         </Link>
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <motion.div
+        className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+        variants={staggerContainerCards}
+        initial="hidden"
+        animate="visible"
+      >
         <SummaryCard label="Leilões publicados" value={summary.totalAuctions} hint="Total cadastrado na sua conta" />
         <SummaryCard label="Leilões ativos" value={summary.activeAuctions} hint="Ainda aceitando lances" />
         <SummaryCard label="Arremates ganhos" value={summary.wonAuctions} hint="Leilões encerrados vencidos por você" />
@@ -223,9 +229,14 @@ function AccountOverview({ summary }: { summary: UserDashboardSummaryDto }) {
           value={summary.activeBidParticipations}
           hint="Leilões abertos com lances seus"
         />
-      </div>
+      </motion.div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-3">
+      <motion.div
+        className="mt-6 grid gap-4 lg:grid-cols-3"
+        variants={staggerContainerCards}
+        initial="hidden"
+        animate="visible"
+      >
         <Card className="p-4">
           <p className="text-sm font-medium text-slate-500">Conta</p>
           <p className="mt-2 text-lg font-semibold text-slate-900">{summary.profile.name}</p>
@@ -255,7 +266,7 @@ function AccountOverview({ summary }: { summary: UserDashboardSummaryDto }) {
             </Link>
           </div>
         </Card>
-      </div>
+      </motion.div>
     </Card>
   );
 }

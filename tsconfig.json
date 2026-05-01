@@ -2,12 +2,19 @@
   "compilerOptions": {
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "baseUrl": ".",
     "paths": {
-      "@auction/config/*": ["packages/config/*"]
+      "@auction/config/*": ["./packages/config/*"]
     },
-    "allowJs": true
+    "allowJs": true,
+    "types": ["node"],
+    "skipLibCheck": true,
+    "noEmit": true
   },
   "files": ["tailwind.config.ts"],
-  "references": [{ "path": "./apps/web" }, { "path": "./apps/api" }, { "path": "./packages/ui" }]
+  "references": [
+    { "path": "./packages/shared-types" },
+    { "path": "./packages/ui" },
+    { "path": "./apps/api" },
+    { "path": "./apps/web" }
+  ]
 }

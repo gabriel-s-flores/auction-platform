@@ -1,8 +1,9 @@
 import type { AuctionDto } from "@auction/shared-types";
 import { motion } from "framer-motion";
+import type { ComponentType } from "react";
 import type { LinkProps } from "react-router-dom";
 
-import { SPRING_SNAPPY, staggerItem } from "../utils/animation-utils";
+import { SPRING_SNAPPY, staggerItemCards } from "../utils/animation-utils";
 import { getThumbnailByPreset } from "../utils/image-utils";
 
 export interface AuctionCardProps {
@@ -14,8 +15,10 @@ export interface AuctionCardProps {
     formattedTime: string;
     displayText: string;
   };
-  linkComponent: React.ComponentType<LinkProps>;
+  linkComponent: ComponentType<LinkProps>;
   onPlaceBid?: (auctionId: string) => void;
+  /** Ativa o efeito hover "pop" (lift). Desativado por padrão. */
+  enableHoverPop?: boolean;
 }
 
 const ImagePlaceholder = () => (
@@ -74,9 +77,10 @@ export function AuctionCard({
   timeRemaining,
   linkComponent: Link,
   onPlaceBid,
+  enableHoverPop = false,
 }: AuctionCardProps) {
   const hasImage = auction.images && auction.images.length > 0;
-  const primaryImage = auction.images?.find((img) => img.isPrimary) ?? auction.images?.[0];
+  const primaryImage = auction.images?.find((img: { isPrimary: boolean }) => img.isPrimary) ?? auction.images?.[0];
   // Use getThumbnailByPreset for better quality (400x400 with q_auto:best,f_auto)
   const thumbnailUrl = primaryImage?.url ? getThumbnailByPreset(primaryImage.url, "card") : null;
 
@@ -99,11 +103,12 @@ export function AuctionCard({
   return (
     <motion.div
       className="group flex h-full flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white transition-shadow duration-200 hover:border-stone-300 hover:shadow-lg"
-      variants={staggerItem}
-      whileHover={{
-        y: -3,
-        transition: SPRING_SNAPPY,
-      }}
+      variants={staggerItemCards}
+      whileHover={
+        enableHoverPop
+          ? { y: -3, transition: SPRING_SNAPPY }
+          : undefined
+      }
     >
       {/* Image container - 1:1 aspect ratio */}
       <div className="relative aspect-square overflow-hidden bg-stone-100">

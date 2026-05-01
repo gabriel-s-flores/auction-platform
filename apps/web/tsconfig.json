@@ -5,7 +5,11 @@
     "paths": {
       "@/*": ["./src/*"],
       "@web/*": ["./src/*"],
-      "@ui/*": ["../../packages/ui/src/*"]
+      "@ui/*": ["../../packages/ui/src/*"],
+      "@auction/shared-types": ["../../packages/shared-types/src/index.ts"],
+      "@auction/shared-types/*": ["../../packages/shared-types/src/*"],
+      "@auction/ui": ["../../packages/ui/src/index.ts"],
+      "@auction/ui/*": ["../../packages/ui/src/*"]
     }
   },
   "include": [
@@ -15,6 +19,10 @@
     "vite.config.ts",
     "vitest.config.ts",
     "tailwind.config.ts",
-    "src/vite-env.d.ts"
+    "src/vite-env.d.ts",
+    "../../packages/shared-types/src",
+    "../../packages/ui/src/index.ts",
+    "../../packages/ui/src/components",
+    "../../packages/ui/src/utils"
   ]
 }

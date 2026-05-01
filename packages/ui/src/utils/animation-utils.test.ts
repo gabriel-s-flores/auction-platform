@@ -11,9 +11,12 @@ import {
   shakeAnimation,
   SPRING_BOUNCY,
   SPRING_SMOOTH,
+  SPRING_SMOOTHER,
   SPRING_SNAPPY,
   staggerContainer,
+  staggerContainerCards,
   staggerItem,
+  staggerItemCards,
   tapFeedback,
   TWEEN_FAST,
   TWEEN_NORMAL,
@@ -52,6 +55,13 @@ describe("animation-utils", () => {
       expect((SPRING_BOUNCY as { damping: number }).damping).toBeLessThan(
         (SPRING_SNAPPY as { damping: number }).damping
       );
+    });
+
+    test("SPRING_SMOOTHER is slower than SPRING_SMOOTH (lower stiffness, higher mass)", () => {
+      const smoother = SPRING_SMOOTHER as { stiffness: number; mass: number };
+      const smooth = SPRING_SMOOTH as { stiffness: number; mass: number };
+      expect(smoother.stiffness).toBeLessThan(smooth.stiffness);
+      expect(smoother.mass).toBeGreaterThan(smooth.mass);
     });
   });
 
@@ -145,6 +155,35 @@ describe("animation-utils", () => {
       };
       expect(visible.transition.delayChildren).toBeGreaterThan(0);
       expect(visible.transition.delayChildren).toBeLessThanOrEqual(0.1);
+    });
+
+    test("staggerContainerCards has larger staggerChildren (slower) than staggerContainer", () => {
+      const cards = staggerContainerCards.visible as {
+        transition: { staggerChildren: number };
+      };
+      const orig = staggerContainer.visible as {
+        transition: { staggerChildren: number };
+      };
+      expect(cards.transition.staggerChildren).toBeGreaterThan(orig.transition.staggerChildren);
+    });
+
+    test("staggerContainerCards staggerChildren is between 80ms and 150ms", () => {
+      const visible = staggerContainerCards.visible as {
+        transition: { staggerChildren: number };
+      };
+      expect(visible.transition.staggerChildren).toBeGreaterThanOrEqual(0.08);
+      expect(visible.transition.staggerChildren).toBeLessThanOrEqual(0.15);
+    });
+
+    test("staggerItemCards hidden state has larger y offset than staggerItem (more dramatic entrance)", () => {
+      const hiddenCards = staggerItemCards.hidden as { y: number };
+      const hiddenOrig = staggerItem.hidden as { y: number };
+      expect(hiddenCards.y).toBeGreaterThan(hiddenOrig.y);
+    });
+
+    test("staggerItemCards has hidden, visible states", () => {
+      expect(staggerItemCards).toHaveProperty("hidden");
+      expect(staggerItemCards).toHaveProperty("visible");
     });
 
     test("staggerItem has hidden, visible states", () => {

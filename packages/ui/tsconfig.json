@@ -2,6 +2,8 @@
   "extends": "../config/tsconfig/react.json",
   "compilerOptions": {
     "paths": {
+      "@auction/shared-types": ["../shared-types/src/index.ts"],
+      "@auction/shared-types/*": ["../shared-types/src/*"],
       "@ui": ["./src/index.ts"],
       "@ui/*": ["./src/*"]
     }
@@ -11,6 +13,7 @@
     ".storybook/**/*.ts",
     ".storybook/**/*.tsx",
     "tailwind.config.ts",
-    "vitest.config.ts"
+    "vitest.config.ts",
+    "../shared-types/src"
   ]
 }

@@ -1,5 +1,6 @@
 import type { DashboardStats, RecentAuctionSummary } from "@auction/shared-types";
-import { Alert, Badge, Button, Card } from "@auction/ui";
+import { Alert, Badge, Button, Card, staggerContainerCards } from "@auction/ui";
+import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 
 import { useAdminDashboardStats, useAdminRecentAuctions } from "@/features/admin/hooks/useAdminDashboard";
@@ -180,7 +181,12 @@ export function AdminDashboardPage() {
         </Alert>
       ) : null}
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <motion.div
+        className="grid grid-cols-1 gap-4 md:grid-cols-3"
+        variants={staggerContainerCards}
+        initial="hidden"
+        animate="visible"
+      >
         <StatCard
           title="Leilões Pendentes"
           value={statsQuery.isLoading ? "..." : stats?.pendingAuctions ?? 0}
@@ -201,9 +207,14 @@ export function AdminDashboardPage() {
           helperText="Base total da plataforma"
           valueClassName="text-blue-600"
         />
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <motion.div
+        className="grid grid-cols-1 gap-6 md:grid-cols-2"
+        variants={staggerContainerCards}
+        initial="hidden"
+        animate="visible"
+      >
         <Card className="p-6">
           <h2 className="mb-4 text-lg font-semibold">Ações Rápidas</h2>
 
@@ -265,7 +276,7 @@ export function AdminDashboardPage() {
         </Card>
 
         <ActivitySummary stats={stats} />
-      </div>
+      </motion.div>
 
       <Card className="p-6">
         <div className="mb-4 flex items-center justify-between gap-4">

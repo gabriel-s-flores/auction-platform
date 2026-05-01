@@ -8,6 +8,14 @@ export const SPRING_SNAPPY: Transition = {
   damping: 30,
   mass: 0.8,
 };
+''
+/** Ainda mais suave — para entradas lentas e elegantes */
+export const SPRING_SMOOTHER: Transition = {
+  type: "spring",
+  stiffness: 220,
+  damping: 32,
+  mass: 1.0,
+};
 
 /** Mais suave — para entradas/saídas de elementos */
 export const SPRING_SMOOTH: Transition = {
@@ -107,6 +115,18 @@ export const staggerContainer: Variants = {
   },
 };
 
+/** Container com stagger mais lento — para cards com entrada suave */
+export const staggerContainerCards: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.05,
+    },
+  },
+};
+
 /** Item individual dentro de um stagger */
 export const staggerItem: Variants = {
   hidden: { opacity: 0, y: 16 },
@@ -114,6 +134,16 @@ export const staggerItem: Variants = {
     opacity: 1,
     y: 0,
     transition: SPRING_SMOOTH,
+  },
+};
+
+/** Item individual para stagger mais lento — cards, seções */
+export const staggerItemCards: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: SPRING_SMOOTHER,
   },
 };
 

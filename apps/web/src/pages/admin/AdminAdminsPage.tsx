@@ -1,5 +1,6 @@
 import type { AdminDto, CreateAdminRequest } from "@auction/shared-types";
-import { Alert, Badge, Button, Card, Input } from "@auction/ui";
+import { Alert, Badge, Button, Card, Input, staggerContainerCards } from "@auction/ui";
+import { motion } from "framer-motion";
 import type { SyntheticEvent } from "react";
 import { useState } from "react";
 
@@ -143,7 +144,12 @@ export function AdminAdminsPage() {
         </Alert>
       ) : null}
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_1.2fr]">
+      <motion.div
+        className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_1.2fr]"
+        variants={staggerContainerCards}
+        initial="hidden"
+        animate="visible"
+      >
         <Card className="p-6">
           <h2 className="mb-4 text-lg font-semibold">Criar novo admin</h2>
 
@@ -202,7 +208,7 @@ export function AdminAdminsPage() {
 
           {adminsContent}
         </Card>
-      </div>
+      </motion.div>
     </div>
   );
 }

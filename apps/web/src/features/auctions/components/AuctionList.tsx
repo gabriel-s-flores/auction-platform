@@ -1,5 +1,5 @@
 import type { AuctionDto } from "@auction/shared-types";
-import { AuctionCard, staggerContainer } from "@auction/ui";
+import { AuctionCard, staggerContainerCards } from "@auction/ui";
 import { motion } from "framer-motion";
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
@@ -118,7 +118,7 @@ export function AuctionList() {
           </div>
           <motion.div
             className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-            variants={staggerContainer}
+            variants={staggerContainerCards}
             initial="hidden"
             animate="visible"
           >
@@ -129,6 +129,7 @@ export function AuctionList() {
                   auction={auction}
                   timeRemaining={timeState}
                   linkComponent={AuctionCardLink}
+                  enableHoverPop
                 />
               );
             })}
@@ -141,7 +142,7 @@ export function AuctionList() {
         <h3 className="mb-4 text-lg font-semibold text-slate-900">Todos os leilões</h3>
         <motion.div
           className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-          variants={staggerContainer}
+          variants={staggerContainerCards}
           initial="hidden"
           animate="visible"
         >
@@ -152,6 +153,7 @@ export function AuctionList() {
                 auction={auction}
                 timeRemaining={timeState}
                 linkComponent={AuctionCardLink}
+                enableHoverPop
               />
             );
           })}
