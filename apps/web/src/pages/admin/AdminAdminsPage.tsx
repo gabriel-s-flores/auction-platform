@@ -6,8 +6,8 @@ import { useState } from "react";
 
 import { useAdmins, useCreateAdmin, useDemoteAdmin } from "@/features/admin/hooks/useAdmins";
 import { getErrorMessage } from "@/shared/api/get-error-message";
-import { confirm } from "@/shared/modal";
 import { useAuth } from "@/shared/auth/auth-context";
+import { confirm } from "@/shared/modal";
 
 function formatDateTime(date: string | null) {
   if (!date) {

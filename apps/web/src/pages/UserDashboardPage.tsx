@@ -22,8 +22,8 @@ import {
   useUserPendingEdits,
   useUserWins,
 } from "@/features/user-panel/hooks/useUserPanel";
-import { confirm } from "@/shared/modal";
 import { getErrorMessage } from "@/shared/api/get-error-message";
+import { confirm } from "@/shared/modal";
 
 type StatusBadgeVariant = "neutral" | "success" | "danger";
 

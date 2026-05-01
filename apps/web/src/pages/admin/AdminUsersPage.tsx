@@ -10,8 +10,8 @@ import {
   useUsers,
 } from "@/features/admin/hooks/useUsers";
 import { getErrorMessage } from "@/shared/api/get-error-message";
-import { alert, confirm } from "@/shared/modal";
 import { useAuth } from "@/shared/auth/auth-context";
+import { alert, confirm } from "@/shared/modal";
 
 type UserFiltersForm = {
   search: string;
