@@ -8,6 +8,7 @@ import {
   useRejectPendingEdit,
 } from "@/features/admin/hooks/usePendingEdits";
 import { getErrorMessage } from "@/shared/api/get-error-message";
+import { alert, confirm } from "@/shared/modal";
 
 function getMutationErrorMessage(args: {
   approveError: unknown;
@@ -60,7 +61,11 @@ export function AdminPendingEditsPage() {
   });
 
   const handleApprove = async (editId: string) => {
-    if (!window.confirm("Tem certeza que deseja aprovar esta edição?")) {
+    const userConfirmed = await confirm("Tem certeza que deseja aprovar esta edição?", {
+      title: "Aprovar edição",
+    });
+
+    if (!userConfirmed) {
       return;
     }
 
@@ -69,7 +74,7 @@ export function AdminPendingEditsPage() {
 
   const handleReject = async (editId: string) => {
     if (!rejectReason.trim()) {
-      window.alert("Por favor, forneça um motivo para a rejeição.");
+      await alert("Por favor, forneça um motivo para a rejeição.");
       return;
     }
 

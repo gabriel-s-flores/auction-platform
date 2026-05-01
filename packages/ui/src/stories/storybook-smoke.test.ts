@@ -9,6 +9,7 @@ import * as ImageCarouselStories from "./ImageCarousel.stories";
 import * as ImageUploaderStories from "./ImageUploader.stories";
 import * as InputStories from "./Input.stories";
 import * as LabelStories from "./Label.stories";
+import * as ModalStories from "./Modal.stories";
 import * as ResponsiveImageStories from "./ResponsiveImage.stories";
 
 type StoryModule = {
@@ -29,6 +30,7 @@ const storyModules: Array<[string, StoryModule]> = [
   ["ImageUploader", ImageUploaderStories],
   ["Input", InputStories],
   ["Label", LabelStories],
+  ["Modal", ModalStories],
   ["ResponsiveImage", ResponsiveImageStories],
 ];
 

@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { useAdmins, useCreateAdmin, useDemoteAdmin } from "@/features/admin/hooks/useAdmins";
 import { getErrorMessage } from "@/shared/api/get-error-message";
+import { confirm } from "@/shared/modal";
 import { useAuth } from "@/shared/auth/auth-context";
 
 function formatDateTime(date: string | null) {
@@ -54,7 +55,12 @@ export function AdminAdminsPage() {
   };
 
   const handleDemote = async (admin: AdminDto) => {
-    if (!window.confirm(`Deseja rebaixar ${admin.name} para USER?`)) {
+    const userConfirmed = await confirm(`Deseja rebaixar ${admin.name} para USER?`, {
+      variant: "destructive",
+      title: "Rebaixar admin",
+    });
+
+    if (!userConfirmed) {
       return;
     }
 

@@ -22,6 +22,7 @@ import {
   useUserPendingEdits,
   useUserWins,
 } from "@/features/user-panel/hooks/useUserPanel";
+import { confirm } from "@/shared/modal";
 import { getErrorMessage } from "@/shared/api/get-error-message";
 
 type StatusBadgeVariant = "neutral" | "success" | "danger";
@@ -173,9 +174,12 @@ function AuctionActions({ auction }: { auction: UserAuctionListItemDto }) {
   const closeAuctionMutation = useCloseAuction(auction.id);
 
   const handleCloseAuction = async () => {
-    const confirmed = window.confirm("Deseja encerrar este leilão agora?");
+    const userConfirmed = await confirm("Deseja encerrar este leilão agora?", {
+      variant: "destructive",
+      title: "Encerrar leilão",
+    });
 
-    if (!confirmed) {
+    if (!userConfirmed) {
       return;
     }
 

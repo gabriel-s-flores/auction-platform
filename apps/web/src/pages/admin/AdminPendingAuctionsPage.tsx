@@ -3,6 +3,7 @@ import { Alert, Button, Card, Input } from "@auction/ui";
 import { type ChangeEvent, useState } from "react";
 
 import { useApproveAuction, usePendingAuctions, useRejectAuction } from "@/features/admin/hooks/usePendingAuctions";
+import { alert, confirm } from "@/shared/modal";
 
 export function AdminPendingAuctionsPage() {
   const [page, setPage] = useState(1);
@@ -14,7 +15,11 @@ export function AdminPendingAuctionsPage() {
   const rejectMutation = useRejectAuction();
 
   const handleApprove = async (auctionId: string) => {
-    if (!window.confirm("Tem certeza que deseja aprovar este leilão?")) {
+    const userConfirmed = await confirm("Tem certeza que deseja aprovar este leilão?", {
+      title: "Aprovar leilão",
+    });
+
+    if (!userConfirmed) {
       return;
     }
 
@@ -23,7 +28,7 @@ export function AdminPendingAuctionsPage() {
 
   const handleReject = async (auctionId: string) => {
     if (!rejectReason.trim()) {
-      window.alert("Por favor, forneça um motivo para a rejeição.");
+      await alert("Por favor, forneça um motivo para a rejeição.");
       return;
     }
 

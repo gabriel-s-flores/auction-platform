@@ -10,6 +10,7 @@ import {
   useUsers,
 } from "@/features/admin/hooks/useUsers";
 import { getErrorMessage } from "@/shared/api/get-error-message";
+import { alert, confirm } from "@/shared/modal";
 import { useAuth } from "@/shared/auth/auth-context";
 
 type UserFiltersForm = {
@@ -473,7 +474,7 @@ export function AdminUsersPage() {
     }
 
     if (banReason.trim().length < 5) {
-      window.alert("Informe um motivo com pelo menos 5 caracteres para o banimento.");
+      await alert("Informe um motivo com pelo menos 5 caracteres para o banimento.");
       return;
     }
 
@@ -486,7 +487,12 @@ export function AdminUsersPage() {
       return;
     }
 
-    if (!window.confirm("Deseja realmente desbanir este usuário?")) {
+    const userConfirmed = await confirm("Deseja realmente desbanir este usuário?", {
+      variant: "destructive",
+      title: "Desbanir usuário",
+    });
+
+    if (!userConfirmed) {
       return;
     }
 
@@ -498,7 +504,11 @@ export function AdminUsersPage() {
       return;
     }
 
-    if (!window.confirm("Deseja promover este usuário para ADMIN?")) {
+    const userConfirmed = await confirm("Deseja promover este usuário para ADMIN?", {
+      title: "Promover usuário",
+    });
+
+    if (!userConfirmed) {
       return;
     }
 
