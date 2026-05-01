@@ -23,6 +23,7 @@ help:
 	@echo "  make test-all   - Run fast tests and database integration tests"
 
 setup:
+	@if [ ! -f apps/web/.env ]; then cp apps/web/.env.example apps/web/.env && echo "Created apps/web/.env from .env.example"; else echo "apps/web/.env already exists"; fi
 	docker compose build
 	docker compose up -d postgres
 	@echo "Waiting for postgres to be ready..."
