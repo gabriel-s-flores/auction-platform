@@ -1,4 +1,4 @@
-import { Alert, Button, Card, Input, Label } from "@auction/ui";
+import { Alert, Button, Card, FieldError, Input, Label } from "@auction/ui";
 import type { SyntheticEvent } from "react";
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -13,11 +13,22 @@ export function LoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
   const redirectTo = (location.state as { from?: string } | null)?.from ?? "/auctions";
 
   async function handleSubmit(event: SyntheticEvent<HTMLFormElement, Event>) {
     event.preventDefault();
+
+    const nextErrors = {
+      email: email.trim() ? undefined : "Informe seu e-mail.",
+      password: password ? undefined : "Informe sua senha.",
+    };
+
+    if (nextErrors.email || nextErrors.password) {
+      setErrors(nextErrors);
+      return;
+    }
 
     await loginMutation.mutateAsync({ email, password });
     void navigate(redirectTo, { replace: true });
@@ -37,28 +48,38 @@ export function LoginPage() {
           </Alert>
         ) : null}
 
-        <form className="space-y-3" onSubmit={(e) => void handleSubmit(e)}>
+        <form className="space-y-3" noValidate onSubmit={(e) => void handleSubmit(e)}>
           <div>
             <Label htmlFor="login-email">E-mail</Label>
             <Input
+              aria-describedby={errors.email ? "login-email-error" : undefined}
+              aria-invalid={Boolean(errors.email)}
               id="login-email"
-              onChange={(event) => setEmail(event.target.value)}
-              required
-              type="email"
+              onChange={(event) => {
+                setEmail(event.target.value);
+                setErrors((current) => ({ ...current, email: undefined }));
+              }}
+              type="text"
               value={email}
             />
+            <FieldError id="login-email-error">{errors.email}</FieldError>
           </div>
 
           <div>
             <Label htmlFor="login-password">Senha</Label>
             <Input
+              aria-describedby={errors.password ? "login-password-error" : undefined}
+              aria-invalid={Boolean(errors.password)}
               autoComplete="current-password"
               id="login-password"
-              onChange={(event) => setPassword(event.target.value)}
-              required
+              onChange={(event) => {
+                setPassword(event.target.value);
+                setErrors((current) => ({ ...current, password: undefined }));
+              }}
               type="password"
               value={password}
             />
+            <FieldError id="login-password-error">{errors.password}</FieldError>
           </div>
 
           <Button className="w-full" disabled={loginMutation.isPending} type="submit">

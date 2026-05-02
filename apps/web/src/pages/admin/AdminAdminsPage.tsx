@@ -1,5 +1,5 @@
 import type { AdminDto, CreateAdminRequest } from "@auction/shared-types";
-import { Alert, Badge, Button, Card, Input, staggerContainerCards } from "@auction/ui";
+import { Alert, Badge, Button, Card, FieldError, Input, staggerContainerCards } from "@auction/ui";
 import { motion } from "framer-motion";
 import type { SyntheticEvent } from "react";
 import { useState } from "react";
@@ -43,6 +43,7 @@ export function AdminAdminsPage() {
     name: "",
     password: "",
   });
+  const [formErrors, setFormErrors] = useState<Partial<Record<keyof CreateAdminRequest, string>>>({});
 
   const admins = adminsQuery.data?.data ?? [];
   const superAdminCount = admins.filter((admin) => admin.role === "SUPER_ADMIN").length;
@@ -50,8 +51,20 @@ export function AdminAdminsPage() {
   const handleCreateAdmin = async (event: SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    const nextErrors = {
+      name: form.name.trim().length >= 2 ? undefined : "Informe um nome com pelo menos 2 caracteres.",
+      email: form.email.trim() ? undefined : "Informe o e-mail do admin.",
+      password: form.password.length >= 8 ? undefined : "A senha deve ter pelo menos 8 caracteres.",
+    };
+
+    if (nextErrors.name || nextErrors.email || nextErrors.password) {
+      setFormErrors(nextErrors);
+      return;
+    }
+
     await createAdminMutation.mutateAsync(form);
     setForm({ email: "", name: "", password: "" });
+    setFormErrors({});
   };
 
   const handleDemote = async (admin: AdminDto) => {
@@ -159,17 +172,22 @@ export function AdminAdminsPage() {
         <Card className="p-6">
           <h2 className="mb-4 text-lg font-semibold">Criar novo admin</h2>
 
-          <form className="space-y-4" onSubmit={(event) => void handleCreateAdmin(event)}>
+          <form className="space-y-4" noValidate onSubmit={(event) => void handleCreateAdmin(event)}>
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700" htmlFor="admin-name">
                 Nome
               </label>
               <Input
+                aria-describedby={formErrors.name ? "admin-name-error" : undefined}
+                aria-invalid={Boolean(formErrors.name)}
                 id="admin-name"
                 value={form.name}
-                onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-                required
+                onChange={(event) => {
+                  setForm((current) => ({ ...current, name: event.target.value }));
+                  setFormErrors((current) => ({ ...current, name: undefined }));
+                }}
               />
+              <FieldError id="admin-name-error">{formErrors.name}</FieldError>
             </div>
 
             <div className="space-y-2">
@@ -177,12 +195,17 @@ export function AdminAdminsPage() {
                 E-mail
               </label>
               <Input
+                aria-describedby={formErrors.email ? "admin-email-error" : undefined}
+                aria-invalid={Boolean(formErrors.email)}
                 id="admin-email"
-                type="email"
+                type="text"
                 value={form.email}
-                onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
-                required
+                onChange={(event) => {
+                  setForm((current) => ({ ...current, email: event.target.value }));
+                  setFormErrors((current) => ({ ...current, email: undefined }));
+                }}
               />
+              <FieldError id="admin-email-error">{formErrors.email}</FieldError>
             </div>
 
             <div className="space-y-2">
@@ -190,12 +213,17 @@ export function AdminAdminsPage() {
                 Senha
               </label>
               <Input
+                aria-describedby={formErrors.password ? "admin-password-error" : undefined}
+                aria-invalid={Boolean(formErrors.password)}
                 id="admin-password"
                 type="password"
                 value={form.password}
-                onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
-                required
+                onChange={(event) => {
+                  setForm((current) => ({ ...current, password: event.target.value }));
+                  setFormErrors((current) => ({ ...current, password: undefined }));
+                }}
               />
+              <FieldError id="admin-password-error">{formErrors.password}</FieldError>
             </div>
 
             <Button className="w-full" disabled={createAdminMutation.isPending} type="submit">

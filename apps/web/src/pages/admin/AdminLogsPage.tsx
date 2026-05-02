@@ -1,5 +1,5 @@
 import type { ActionType, ActivityLogDto, ListActivityLogsQuery } from "@auction/shared-types";
-import { Alert, Badge, Button, Card, Input } from "@auction/ui";
+import { Alert, Badge, Button, Card, CustomDatePicker, Input } from "@auction/ui";
 import { useState } from "react";
 
 import { useActivityLogs, useExportActivityLogs } from "@/features/admin/hooks/useActivityLogs";
@@ -201,6 +201,7 @@ export function AdminLogsPage() {
       <Card className="p-6">
         <form
           className="space-y-4"
+          noValidate
           onSubmit={(event) => {
             event.preventDefault();
             applyFilters();
@@ -255,24 +256,22 @@ export function AdminLogsPage() {
 
             <div className="flex flex-col gap-2 text-sm font-medium text-slate-700">
               <label htmlFor="activity-log-start-date">Data inicial</label>
-              <Input
+              <CustomDatePicker
                 id="activity-log-start-date"
-                type="date"
                 value={filters.startDate}
-                onChange={(event) =>
-                  setFilters((current) => ({ ...current, startDate: event.target.value }))
+                onChange={(value) =>
+                  setFilters((current) => ({ ...current, startDate: value }))
                 }
               />
             </div>
 
             <div className="flex flex-col gap-2 text-sm font-medium text-slate-700">
               <label htmlFor="activity-log-end-date">Data final</label>
-              <Input
+              <CustomDatePicker
                 id="activity-log-end-date"
-                type="date"
                 value={filters.endDate}
-                onChange={(event) =>
-                  setFilters((current) => ({ ...current, endDate: event.target.value }))
+                onChange={(value) =>
+                  setFilters((current) => ({ ...current, endDate: value }))
                 }
               />
             </div>

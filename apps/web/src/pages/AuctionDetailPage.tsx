@@ -4,6 +4,7 @@ import {
   Badge,
   Button,
   Card,
+  FieldError,
   ImageCarousel,
   ImageUploader,
   Input,
@@ -196,6 +197,7 @@ function AuctionStatusHero({
 interface OpenAuctionBidCardProps {
   bidAmount: string;
   minBid: number;
+  bidError?: string;
   isOwner: boolean;
   placeBidState: {
     error: unknown;
@@ -215,6 +217,7 @@ interface OpenAuctionBidCardProps {
 
 function OpenAuctionBidCard({
   bidAmount,
+  bidError,
   minBid,
   isOwner,
   placeBidState,
@@ -241,7 +244,7 @@ function OpenAuctionBidCard({
         </div>
       ) : null}
 
-      <form className="space-y-4" onSubmit={onSubmitBid}>
+      <form className="space-y-4" noValidate onSubmit={onSubmitBid}>
         <div>
           <Label htmlFor="bid-amount">Valor do lance</Label>
           <div className="mt-1.5 relative">
@@ -249,10 +252,10 @@ function OpenAuctionBidCard({
               R$
             </span>
             <Input
+              aria-describedby={bidError ? "bid-amount-error bid-minimum-help" : "bid-minimum-help"}
+              aria-invalid={Boolean(bidError)}
               id="bid-amount"
-              min={minBid}
               onChange={(event) => onBidAmountChange(event.target.value)}
-              required
               step={1}
               type="number"
               value={bidAmount}
@@ -260,8 +263,11 @@ function OpenAuctionBidCard({
             />
           </div>
           <p className="mt-1.5 text-xs text-slate-500">
+            <span id="bid-minimum-help">
             Lance mínimo: <span className="font-medium">{formatCurrency(minBid)}</span>
+            </span>
           </p>
+          <FieldError id="bid-amount-error">{bidError}</FieldError>
         </div>
 
         <Button className="w-full py-3 text-base font-semibold" disabled={placeBidState.isPending} type="submit">
@@ -459,6 +465,7 @@ export function AuctionDetailPage() {
   });
 
   const [bidAmount, setBidAmount] = useState("");
+  const [bidError, setBidError] = useState<string | undefined>();
   const [titleEditValue, setTitleEditValue] = useState("");
   const [descriptionEditValue, setDescriptionEditValue] = useState("");
   const [editRequestSuccessMessage, setEditRequestSuccessMessage] = useState<string | null>(null);
@@ -486,8 +493,16 @@ export function AuctionDetailPage() {
 
   async function handlePlaceBid(event: SyntheticEvent<HTMLFormElement, Event>) {
     event.preventDefault();
-    await placeBidMutation.mutateAsync({ amount: Number(bidAmount) });
+    const amount = Number(bidAmount);
+
+    if (!Number.isFinite(amount) || amount < minBid) {
+      setBidError(`Informe um lance de pelo menos ${formatCurrency(minBid)}.`);
+      return;
+    }
+
+    await placeBidMutation.mutateAsync({ amount });
     setBidAmount("");
+    setBidError(undefined);
   }
 
   async function handleCloseAuction() {
@@ -720,6 +735,7 @@ export function AuctionDetailPage() {
           {/* Bid card */}
           <AuctionActionPanel
             bidAmount={bidAmount}
+            bidError={bidError}
             closeAuctionState={{
               error: closeAuctionMutation.error,
               isError: closeAuctionMutation.isError,
@@ -729,7 +745,10 @@ export function AuctionDetailPage() {
             isAuctionOpen={isAuctionOpen}
             isOwner={isOwner}
             minBid={minBid}
-            onBidAmountChange={setBidAmount}
+            onBidAmountChange={(value) => {
+              setBidAmount(value);
+              setBidError(undefined);
+            }}
             onCloseAuction={() => {
               void handleCloseAuction();
             }}

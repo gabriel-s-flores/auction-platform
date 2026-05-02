@@ -3,6 +3,8 @@ export * from "./components/AuctionCard";
 export * from "./components/Badge";
 export * from "./components/Button";
 export * from "./components/Card";
+export * from "./components/CustomDatePicker";
+export * from "./components/FieldError";
 export * from "./components/ImageCarousel";
 export * from "./components/ImageUploader";
 export * from "./components/Input";

@@ -1,4 +1,4 @@
-import { Alert, Button, Card, Input, Label } from "@auction/ui";
+import { Alert, Button, Card, CustomDatePicker, FieldError, Input, Label } from "@auction/ui";
 import type React from "react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -14,15 +14,33 @@ export function CreateAuctionPage() {
   const [description, setDescription] = useState("");
   const [startingPrice, setStartingPrice] = useState("");
   const [endsAt, setEndsAt] = useState("");
+  const [errors, setErrors] = useState<{
+    endsAt?: string;
+    startingPrice?: string;
+    title?: string;
+  }>({});
 
   async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    const price = Number(startingPrice);
+    const endDate = endsAt ? new Date(endsAt) : null;
+    const nextErrors = {
+      title: title.trim().length >= 3 ? undefined : "Informe um título com pelo menos 3 caracteres.",
+      startingPrice: Number.isFinite(price) && price >= 1 ? undefined : "Informe um preço inicial válido.",
+      endsAt: endDate && endDate > new Date() ? undefined : "Selecione uma data futura para o encerramento.",
+    };
+
+    if (nextErrors.title || nextErrors.startingPrice || nextErrors.endsAt || !endDate) {
+      setErrors(nextErrors);
+      return;
+    }
+
     const auction = await createAuctionMutation.mutateAsync({
       title,
       description: description || null,
-      startingPrice: Number(startingPrice),
-      endsAt: new Date(endsAt).toISOString(),
+      startingPrice: price,
+      endsAt: endDate.toISOString(),
     });
 
     void navigate(`/auctions/${auction.id}`);
@@ -42,16 +60,20 @@ export function CreateAuctionPage() {
           </Alert>
         ) : null}
 
-        <form className="space-y-3" onSubmit={(e) => void handleSubmit(e)}>
+        <form className="space-y-3" noValidate onSubmit={(e) => void handleSubmit(e)}>
           <div>
             <Label htmlFor="auction-title">Título</Label>
             <Input
+              aria-describedby={errors.title ? "auction-title-error" : undefined}
+              aria-invalid={Boolean(errors.title)}
               id="auction-title"
-              minLength={3}
-              onChange={(event) => setTitle(event.target.value)}
-              required
+              onChange={(event) => {
+                setTitle(event.target.value);
+                setErrors((current) => ({ ...current, title: undefined }));
+              }}
               value={title}
             />
+            <FieldError id="auction-title-error">{errors.title}</FieldError>
           </div>
 
           <div>
@@ -66,25 +88,35 @@ export function CreateAuctionPage() {
           <div>
             <Label htmlFor="auction-price">Preço inicial</Label>
             <Input
+              aria-describedby={errors.startingPrice ? "auction-price-error" : undefined}
+              aria-invalid={Boolean(errors.startingPrice)}
               id="auction-price"
-              min={1}
-              onChange={(event) => setStartingPrice(event.target.value)}
-              required
+              onChange={(event) => {
+                setStartingPrice(event.target.value);
+                setErrors((current) => ({ ...current, startingPrice: undefined }));
+              }}
               step={1}
               type="number"
               value={startingPrice}
             />
+            <FieldError id="auction-price-error">{errors.startingPrice}</FieldError>
           </div>
 
           <div>
             <Label htmlFor="auction-ends-at">Data/hora de encerramento</Label>
-            <Input
+            <CustomDatePicker
+              aria-describedby={errors.endsAt ? "auction-ends-at-error" : undefined}
+              aria-invalid={Boolean(errors.endsAt)}
+              includeTime
               id="auction-ends-at"
-              onChange={(event) => setEndsAt(event.target.value)}
-              required
-              type="datetime-local"
+              min={new Date().toISOString().slice(0, 16)}
+              onChange={(value) => {
+                setEndsAt(value);
+                setErrors((current) => ({ ...current, endsAt: undefined }));
+              }}
               value={endsAt}
             />
+            <FieldError id="auction-ends-at-error">{errors.endsAt}</FieldError>
           </div>
 
           <Button className="w-full" disabled={createAuctionMutation.isPending} type="submit">

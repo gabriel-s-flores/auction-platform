@@ -540,6 +540,7 @@ export function AdminUsersPage() {
       <Card className="p-6">
         <form
           className="space-y-4"
+          noValidate
           onSubmit={(event) => {
             event.preventDefault();
             applyFilters();

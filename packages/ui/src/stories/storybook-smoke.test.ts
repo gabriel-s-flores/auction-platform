@@ -5,6 +5,8 @@ import * as AuctionCardStories from "./AuctionCard.stories";
 import * as BadgeStories from "./Badge.stories";
 import * as ButtonStories from "./Button.stories";
 import * as CardStories from "./Card.stories";
+import * as CustomDatePickerStories from "./CustomDatePicker.stories";
+import * as FieldErrorStories from "./FieldError.stories";
 import * as ImageCarouselStories from "./ImageCarousel.stories";
 import * as ImageUploaderStories from "./ImageUploader.stories";
 import * as InputStories from "./Input.stories";
@@ -26,6 +28,8 @@ const storyModules: Array<[string, StoryModule]> = [
   ["Badge", BadgeStories],
   ["Button", ButtonStories],
   ["Card", CardStories],
+  ["CustomDatePicker", CustomDatePickerStories],
+  ["FieldError", FieldErrorStories],
   ["ImageCarousel", ImageCarouselStories],
   ["ImageUploader", ImageUploaderStories],
   ["Input", InputStories],
