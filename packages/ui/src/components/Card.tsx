@@ -1,5 +1,5 @@
-import { type HTMLMotionProps, motion } from "framer-motion";
 import type { Variants } from "framer-motion";
+import { type HTMLMotionProps, motion } from "framer-motion";
 import type { PropsWithChildren } from "react";
 
 import { SPRING_SNAPPY, staggerItemCards } from "../utils/animation-utils";

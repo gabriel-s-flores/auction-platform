@@ -8,7 +8,7 @@ export const SPRING_SNAPPY: Transition = {
   damping: 30,
   mass: 0.8,
 };
-''
+
 /** Ainda mais suave — para entradas lentas e elegantes */
 export const SPRING_SMOOTHER: Transition = {
   type: "spring",
