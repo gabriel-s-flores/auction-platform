@@ -1,13 +1,16 @@
 import type { AuctionDto } from "@auction/shared-types";
 import { AuctionCard, staggerContainerCards } from "@auction/ui";
 import { motion } from "framer-motion";
-import { useMemo } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useMemo, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { useAuctions } from "@/features/auctions/hooks/useAuctions";
 import { useCountdownTicker } from "@/features/auctions/hooks/useCountdownTicker";
+import { useAuth } from "@/shared/auth/auth-context";
+import { alert as modalAlert, confirm } from "@/shared/modal/use-modal";
 
 import { getTimeRemainingState } from "./Countdown";
+import { QuickBidModal } from "./QuickBidModal";
 
 const ENDING_SOON_THRESHOLD_MS = 5 * 60 * 1000;
 
@@ -17,12 +20,14 @@ interface AuctionListItemViewModel {
   timeState: ReturnType<typeof getTimeRemainingState>;
 }
 
-const AuctionCardLink = (props: React.ComponentPropsWithRef<typeof Link>) => (
-  <Link {...props} />
-);
+const AuctionCardLink = (props: React.ComponentPropsWithRef<typeof Link>) => <Link {...props} />;
 
 export function AuctionList() {
   const { data: auctions = [], isLoading, isError } = useAuctions();
+  const { isAuthenticated, user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [selectedAuctionId, setSelectedAuctionId] = useState<string | null>(null);
   const currentTimestamp = useCountdownTicker({
     enabled: !isLoading && !isError && auctions.length > 0,
   });
@@ -44,9 +49,70 @@ export function AuctionList() {
       ({ auction, timeRemainingMs }) =>
         auction.status === "OPEN" &&
         timeRemainingMs > 0 &&
-        timeRemainingMs <= ENDING_SOON_THRESHOLD_MS
+        timeRemainingMs <= ENDING_SOON_THRESHOLD_MS,
     );
   }, [auctionItems]);
+
+  const selectedAuction = useMemo(() => {
+    if (!selectedAuctionId) {
+      return null;
+    }
+
+    return auctionItems.find(({ auction }) => auction.id === selectedAuctionId)?.auction ?? null;
+  }, [auctionItems, selectedAuctionId]);
+
+  const handlePlaceBid = useCallback(
+    async (auctionId: string) => {
+      const targetItem = auctionItems.find(({ auction }) => auction.id === auctionId);
+
+      if (!targetItem) {
+        return;
+      }
+
+      if (!isAuthenticated) {
+        const shouldLogin = await confirm(
+          "Faça login para enviar lances e participar deste leilão.",
+          {
+            cancelLabel: "Agora não",
+            confirmLabel: "Entrar",
+            title: "Entrar para dar lance",
+          },
+        );
+
+        if (shouldLogin) {
+          const from = `${location.pathname}${location.search}${location.hash}`;
+          void navigate("/login", { state: { from } });
+        }
+
+        return;
+      }
+
+      if (user?.id === targetItem.auction.sellerId) {
+        await modalAlert("Você não pode dar lance no próprio leilão.", {
+          title: "Lance indisponível",
+        });
+        return;
+      }
+
+      if (targetItem.auction.status !== "OPEN" || targetItem.timeState.isExpired) {
+        await modalAlert("Este leilão não está mais aceitando novos lances.", {
+          title: "Leilão encerrado",
+        });
+        return;
+      }
+
+      setSelectedAuctionId(auctionId);
+    },
+    [
+      auctionItems,
+      isAuthenticated,
+      location.hash,
+      location.pathname,
+      location.search,
+      navigate,
+      user?.id,
+    ],
+  );
 
   if (isLoading) {
     return (
@@ -129,6 +195,9 @@ export function AuctionList() {
                   auction={auction}
                   timeRemaining={timeState}
                   linkComponent={AuctionCardLink}
+                  onPlaceBid={(auctionId) => {
+                    void handlePlaceBid(auctionId);
+                  }}
                   enableHoverPop
                 />
               );
@@ -153,12 +222,28 @@ export function AuctionList() {
                 auction={auction}
                 timeRemaining={timeState}
                 linkComponent={AuctionCardLink}
+                onPlaceBid={(auctionId) => {
+                  void handlePlaceBid(auctionId);
+                }}
                 enableHoverPop
               />
             );
           })}
         </motion.div>
       </section>
+      {selectedAuction ? (
+        <QuickBidModal
+          auction={selectedAuction}
+          isOpen
+          isOwner={user?.id === selectedAuction.sellerId}
+          onClose={() => setSelectedAuctionId(null)}
+          onViewDetails={() => {
+            const auctionId = selectedAuction.id;
+            setSelectedAuctionId(null);
+            void navigate(`/auctions/${auctionId}`);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

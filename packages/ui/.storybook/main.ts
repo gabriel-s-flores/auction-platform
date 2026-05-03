@@ -8,9 +8,10 @@ import { mergeConfig } from "vite";
 const storybookRoot = dirname(fileURLToPath(import.meta.url));
 const packageRoot = resolve(storybookRoot, "..");
 const repositoryRoot = resolve(packageRoot, "../..");
+const webSourceRoot = resolve(repositoryRoot, "apps/web/src");
 
 const config = {
-  stories: ["../src/**/*.stories.@(ts|tsx)"],
+  stories: ["../src/**/*.stories.@(ts|tsx)", `${webSourceRoot}/**/*.stories.@(ts|tsx)`],
   addons: ["@storybook/addon-docs", "@storybook/addon-a11y"],
   framework: {
     name: "@storybook/react-vite",
@@ -35,7 +36,10 @@ const config = {
       },
       resolve: {
         alias: {
+          "@": webSourceRoot,
+          "@auction/ui": resolve(packageRoot, "src/index.ts"),
           "@auction/shared-types": resolve(repositoryRoot, "packages/shared-types/src/index.ts"),
+          "@web": webSourceRoot,
           "@ui": resolve(packageRoot, "src/index.ts"),
         },
       },
