@@ -1,5 +1,5 @@
 import type { PendingAuctionDto } from "@auction/shared-types";
-import { Alert, Button, Card, Input } from "@auction/ui";
+import { Alert, Button, Card, Input, Pagination, StateMessage } from "@auction/ui";
 import { type ChangeEvent, useState } from "react";
 
 import { useApproveAuction, usePendingAuctions, useRejectAuction } from "@/features/admin/hooks/usePendingAuctions";
@@ -41,7 +41,7 @@ export function AdminPendingAuctionsPage() {
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">Leilões Pendentes de Aprovação</h1>
-        <p>Carregando...</p>
+        <StateMessage>Carregando leilões pendentes...</StateMessage>
       </div>
     );
   }
@@ -64,7 +64,7 @@ export function AdminPendingAuctionsPage() {
 
       {auctions.length === 0 ? (
         <Card className="p-6">
-          <p className="text-center text-gray-500">Nenhum leilão pendente de aprovação</p>
+          <StateMessage className="py-0">Nenhum leilão pendente de aprovação</StateMessage>
         </Card>
       ) : (
         <>
@@ -151,29 +151,7 @@ export function AdminPendingAuctionsPage() {
             ))}
           </div>
 
-          {totalPages > 1 ? (
-            <div className="mt-6 flex justify-center gap-2">
-              <Button
-                variant="secondary"
-                onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
-                disabled={page === 1}
-              >
-                Anterior
-              </Button>
-
-              <span className="px-4 py-2">
-                Página {page} de {totalPages}
-              </span>
-
-              <Button
-                variant="secondary"
-                onClick={() => setPage((currentPage) => Math.min(totalPages, currentPage + 1))}
-                disabled={page === totalPages}
-              >
-                Próxima
-              </Button>
-            </div>
-          ) : null}
+          <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
         </>
       )}
     </div>

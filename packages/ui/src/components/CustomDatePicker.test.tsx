@@ -23,7 +23,7 @@ describe("CustomDatePicker", () => {
     expect(dialog).toBeInTheDocument();
     expect(screen.getByText(/maio de 2026/i)).toBeInTheDocument();
 
-    await user.click(within(dialog).getByRole("button", { name: "15" }));
+    await user.click(within(dialog).getByRole("button", { name: "15/05/2026" }));
 
     expect(onChange).toHaveBeenCalledWith("2026-05-15");
     expect(screen.queryByRole("dialog", { name: "Calendário" })).not.toBeInTheDocument();
@@ -45,7 +45,7 @@ describe("CustomDatePicker", () => {
     await user.click(screen.getByRole("button", { name: /02\/05\/2026, 14:30/i }));
     const dialog = screen.getByRole("dialog", { name: "Calendário" });
 
-    await user.click(within(dialog).getByRole("button", { name: "15" }));
+    await user.click(within(dialog).getByRole("button", { name: "15/05/2026" }));
 
     expect(onChange).toHaveBeenCalledWith("2026-05-15T14:30");
     expect(screen.getByRole("dialog", { name: "Calendário" })).toBeInTheDocument();
@@ -90,7 +90,7 @@ describe("CustomDatePicker", () => {
     await user.click(screen.getByRole("button", { name: "02/05/2026" }));
     const selectedDay = within(screen.getByRole("dialog", { name: "Calendário" })).getByRole(
       "button",
-      { name: "2" }
+      { name: "02/05/2026" }
     );
 
     selectedDay.focus();

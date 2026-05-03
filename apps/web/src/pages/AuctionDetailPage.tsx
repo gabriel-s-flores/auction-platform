@@ -9,6 +9,7 @@ import {
   ImageUploader,
   Input,
   Label,
+  Textarea,
 } from "@auction/ui";
 import type { SyntheticEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -664,9 +665,9 @@ export function AuctionDetailPage() {
                 <div className="space-y-3 rounded-xl border border-slate-200 p-4">
                   <div>
                     <Label htmlFor="edit-description">Nova descrição</Label>
-                    <textarea
+                    <Textarea
                       id="edit-description"
-                      className="mt-1.5 min-h-32 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-hidden transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+                      className="mt-1.5"
                       value={descriptionEditValue}
                       onChange={(event) => setDescriptionEditValue(event.target.value)}
                     />

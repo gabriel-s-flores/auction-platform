@@ -7,12 +7,17 @@ import * as ButtonStories from "./Button.stories";
 import * as CardStories from "./Card.stories";
 import * as CustomDatePickerStories from "./CustomDatePicker.stories";
 import * as FieldErrorStories from "./FieldError.stories";
+import * as FormFieldStories from "./FormField.stories";
 import * as ImageCarouselStories from "./ImageCarousel.stories";
 import * as ImageUploaderStories from "./ImageUploader.stories";
 import * as InputStories from "./Input.stories";
 import * as LabelStories from "./Label.stories";
 import * as ModalStories from "./Modal.stories";
+import * as PaginationStories from "./Pagination.stories";
 import * as ResponsiveImageStories from "./ResponsiveImage.stories";
+import * as SelectStories from "./Select.stories";
+import * as StateMessageStories from "./StateMessage.stories";
+import * as TextareaStories from "./Textarea.stories";
 
 type StoryModule = {
   default: {
@@ -30,12 +35,17 @@ const storyModules: Array<[string, StoryModule]> = [
   ["Card", CardStories],
   ["CustomDatePicker", CustomDatePickerStories],
   ["FieldError", FieldErrorStories],
+  ["FormField", FormFieldStories],
   ["ImageCarousel", ImageCarouselStories],
   ["ImageUploader", ImageUploaderStories],
   ["Input", InputStories],
   ["Label", LabelStories],
   ["Modal", ModalStories],
+  ["Pagination", PaginationStories],
   ["ResponsiveImage", ResponsiveImageStories],
+  ["Select", SelectStories],
+  ["StateMessage", StateMessageStories],
+  ["Textarea", TextareaStories],
 ];
 
 describe("Storybook stories", () => {

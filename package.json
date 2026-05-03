@@ -46,7 +46,7 @@
     "test:ui": "bun run --filter @auction/ui test",
     "test:e2e": "bun run --filter @auction/web test:e2e",
     "test:storybook": "bun run --filter @auction/ui test:storybook",
-    "test:infra": "make test-integration",
+    "test:infra": "bun run --filter @auction/api test:integration:setup",
     "test:all": "bun run test && bun run test:storybook && bun run test:e2e && bun run test:infra",
     "storybook": "bun run --filter @auction/ui storybook",
     "storybook:build": "bun run --filter @auction/ui storybook:build",

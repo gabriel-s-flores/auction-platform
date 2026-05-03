@@ -1,5 +1,14 @@
 import type { AdminDto, CreateAdminRequest } from "@auction/shared-types";
-import { Alert, Badge, Button, Card, FieldError, Input, staggerContainerCards } from "@auction/ui";
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  FormField,
+  Input,
+  staggerContainerCards,
+  StateMessage,
+} from "@auction/ui";
 import { motion } from "framer-motion";
 import type { SyntheticEvent } from "react";
 import { useState } from "react";
@@ -97,9 +106,9 @@ export function AdminAdminsPage() {
   let adminsContent: React.ReactNode;
 
   if (adminsQuery.isLoading) {
-    adminsContent = <p className="py-6 text-center text-slate-500">Carregando admins...</p>;
+    adminsContent = <StateMessage>Carregando admins...</StateMessage>;
   } else if (admins.length === 0) {
-    adminsContent = <p className="py-6 text-center text-slate-500">Nenhum admin encontrado.</p>;
+    adminsContent = <StateMessage>Nenhum admin encontrado.</StateMessage>;
   } else {
     adminsContent = (
       <div className="space-y-4">
@@ -172,11 +181,17 @@ export function AdminAdminsPage() {
         <Card className="p-6">
           <h2 className="mb-4 text-lg font-semibold">Criar novo admin</h2>
 
-          <form className="space-y-4" noValidate onSubmit={(event) => void handleCreateAdmin(event)}>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700" htmlFor="admin-name">
-                Nome
-              </label>
+          <form
+            className="space-y-4"
+            noValidate
+            onSubmit={(event) => void handleCreateAdmin(event)}
+          >
+            <FormField
+              id="admin-name"
+              label="Nome"
+              error={formErrors.name}
+              errorId="admin-name-error"
+            >
               <Input
                 aria-describedby={formErrors.name ? "admin-name-error" : undefined}
                 aria-invalid={Boolean(formErrors.name)}
@@ -187,13 +202,14 @@ export function AdminAdminsPage() {
                   setFormErrors((current) => ({ ...current, name: undefined }));
                 }}
               />
-              <FieldError id="admin-name-error">{formErrors.name}</FieldError>
-            </div>
+            </FormField>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700" htmlFor="admin-email">
-                E-mail
-              </label>
+            <FormField
+              id="admin-email"
+              label="E-mail"
+              error={formErrors.email}
+              errorId="admin-email-error"
+            >
               <Input
                 aria-describedby={formErrors.email ? "admin-email-error" : undefined}
                 aria-invalid={Boolean(formErrors.email)}
@@ -205,13 +221,14 @@ export function AdminAdminsPage() {
                   setFormErrors((current) => ({ ...current, email: undefined }));
                 }}
               />
-              <FieldError id="admin-email-error">{formErrors.email}</FieldError>
-            </div>
+            </FormField>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700" htmlFor="admin-password">
-                Senha
-              </label>
+            <FormField
+              id="admin-password"
+              label="Senha"
+              error={formErrors.password}
+              errorId="admin-password-error"
+            >
               <Input
                 aria-describedby={formErrors.password ? "admin-password-error" : undefined}
                 aria-invalid={Boolean(formErrors.password)}
@@ -223,8 +240,7 @@ export function AdminAdminsPage() {
                   setFormErrors((current) => ({ ...current, password: undefined }));
                 }}
               />
-              <FieldError id="admin-password-error">{formErrors.password}</FieldError>
-            </div>
+            </FormField>
 
             <Button className="w-full" disabled={createAdminMutation.isPending} type="submit">
               {createAdminMutation.isPending ? "Criando..." : "Criar admin"}

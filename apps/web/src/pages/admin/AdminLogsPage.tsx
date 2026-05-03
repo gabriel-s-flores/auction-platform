@@ -1,5 +1,16 @@
 import type { ActionType, ActivityLogDto, ListActivityLogsQuery } from "@auction/shared-types";
-import { Alert, Badge, Button, Card, CustomDatePicker, Input } from "@auction/ui";
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  CustomDatePicker,
+  FormField,
+  Input,
+  Pagination,
+  Select,
+  StateMessage,
+} from "@auction/ui";
 import { useState } from "react";
 
 import { useActivityLogs, useExportActivityLogs } from "@/features/admin/hooks/useActivityLogs";
@@ -138,14 +149,14 @@ export function AdminLogsPage() {
 
   const logsContent = (() => {
     if (logsQuery.isLoading) {
-      return <p className="py-6 text-center text-slate-500">Carregando logs...</p>;
+      return <StateMessage>Carregando logs...</StateMessage>;
     }
 
     if (logs.length === 0) {
       return (
-        <p className="py-6 text-center text-slate-500">
+        <StateMessage>
           Nenhum log encontrado para os filtros aplicados.
-        </p>
+        </StateMessage>
       );
     }
 
@@ -208,11 +219,9 @@ export function AdminLogsPage() {
           }}
         >
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
-            <div className="flex flex-col gap-2 text-sm font-medium text-slate-700">
-              <label htmlFor="activity-log-action">Ação</label>
-              <select
+            <FormField id="activity-log-action" label="Ação">
+              <Select
                 id="activity-log-action"
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-hidden transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
                 value={filters.action}
                 onChange={(event) =>
                   setFilters((current) => ({
@@ -227,11 +236,10 @@ export function AdminLogsPage() {
                     {option.label}
                   </option>
                 ))}
-              </select>
-            </div>
+              </Select>
+            </FormField>
 
-            <div className="flex flex-col gap-2 text-sm font-medium text-slate-700">
-              <label htmlFor="activity-log-entity-type">Entidade</label>
+            <FormField id="activity-log-entity-type" label="Entidade">
               <Input
                 id="activity-log-entity-type"
                 placeholder="auction, user, edit..."
@@ -240,10 +248,9 @@ export function AdminLogsPage() {
                   setFilters((current) => ({ ...current, entityType: event.target.value }))
                 }
               />
-            </div>
+            </FormField>
 
-            <div className="flex flex-col gap-2 text-sm font-medium text-slate-700">
-              <label htmlFor="activity-log-actor-id">Actor ID</label>
+            <FormField id="activity-log-actor-id" label="Actor ID">
               <Input
                 id="activity-log-actor-id"
                 placeholder="UUID do ator"
@@ -252,10 +259,9 @@ export function AdminLogsPage() {
                   setFilters((current) => ({ ...current, actorId: event.target.value }))
                 }
               />
-            </div>
+            </FormField>
 
-            <div className="flex flex-col gap-2 text-sm font-medium text-slate-700">
-              <label htmlFor="activity-log-start-date">Data inicial</label>
+            <FormField id="activity-log-start-date" label="Data inicial">
               <CustomDatePicker
                 id="activity-log-start-date"
                 value={filters.startDate}
@@ -263,10 +269,9 @@ export function AdminLogsPage() {
                   setFilters((current) => ({ ...current, startDate: value }))
                 }
               />
-            </div>
+            </FormField>
 
-            <div className="flex flex-col gap-2 text-sm font-medium text-slate-700">
-              <label htmlFor="activity-log-end-date">Data final</label>
+            <FormField id="activity-log-end-date" label="Data final">
               <CustomDatePicker
                 id="activity-log-end-date"
                 value={filters.endDate}
@@ -274,7 +279,7 @@ export function AdminLogsPage() {
                   setFilters((current) => ({ ...current, endDate: value }))
                 }
               />
-            </div>
+            </FormField>
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -320,30 +325,12 @@ export function AdminLogsPage() {
 
         {logsContent}
 
-        {pagination && pagination.totalPages > 1 ? (
-          <div className="mt-6 flex justify-center gap-2">
-            <Button
-              variant="secondary"
-              onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
-              disabled={page === 1}
-            >
-              Anterior
-            </Button>
-
-            <span className="px-4 py-2 text-sm text-slate-600">
-              Página {pagination.page} de {pagination.totalPages}
-            </span>
-
-            <Button
-              variant="secondary"
-              onClick={() =>
-                setPage((currentPage) => Math.min(pagination.totalPages, currentPage + 1))
-              }
-              disabled={page === pagination.totalPages}
-            >
-              Próxima
-            </Button>
-          </div>
+        {pagination ? (
+          <Pagination
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            onPageChange={setPage}
+          />
         ) : null}
       </Card>
     </div>

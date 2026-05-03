@@ -1,5 +1,15 @@
 import type { ListUsersQuery, UserDetailDto, UserDto, UserRole } from "@auction/shared-types";
-import { Alert, Badge, Button, Card, Input } from "@auction/ui";
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  FormField,
+  Input,
+  Pagination,
+  Select,
+  StateMessage,
+} from "@auction/ui";
 import { useEffect, useMemo, useState } from "react";
 
 import {
@@ -239,7 +249,6 @@ function UserDetailCard({
 
 function UsersListSection({
   isLoading,
-  page,
   pagination,
   selectedUserId,
   users,
@@ -247,7 +256,6 @@ function UsersListSection({
   onSelectUser,
 }: {
   isLoading: boolean;
-  page: number;
   pagination:
     | {
         page: number;
@@ -264,9 +272,9 @@ function UsersListSection({
   let content: React.ReactNode;
 
   if (isLoading) {
-    content = <p className="py-6 text-center text-slate-500">Carregando usuários...</p>;
+    content = <StateMessage>Carregando usuários...</StateMessage>;
   } else if (users.length === 0) {
-    content = <p className="py-6 text-center text-slate-500">Nenhum usuário encontrado.</p>;
+    content = <StateMessage>Nenhum usuário encontrado.</StateMessage>;
   } else {
     content = (
       <div className="space-y-3">
@@ -323,28 +331,12 @@ function UsersListSection({
 
       {content}
 
-      {pagination && pagination.totalPages > 1 ? (
-        <div className="mt-6 flex justify-center gap-2">
-          <Button
-            variant="secondary"
-            onClick={() => onPageChange(Math.max(1, page - 1))}
-            disabled={page === 1}
-          >
-            Anterior
-          </Button>
-
-          <span className="px-4 py-2 text-sm text-slate-600">
-            Página {pagination.page} de {pagination.totalPages}
-          </span>
-
-          <Button
-            variant="secondary"
-            onClick={() => onPageChange(Math.min(pagination.totalPages, page + 1))}
-            disabled={page === pagination.totalPages}
-          >
-            Próxima
-          </Button>
-        </div>
+      {pagination ? (
+        <Pagination
+          currentPage={pagination.page}
+          totalPages={pagination.totalPages}
+          onPageChange={onPageChange}
+        />
       ) : null}
     </Card>
   );
@@ -384,9 +376,9 @@ function UserDetailsSection({
   if (!selectedUserId) {
     return (
       <Card className="p-6">
-        <p className="py-6 text-center text-slate-500">
+        <StateMessage>
           Selecione um usuário para visualizar detalhes e ações disponíveis.
-        </p>
+        </StateMessage>
       </Card>
     );
   }
@@ -394,7 +386,7 @@ function UserDetailsSection({
   if (isLoading) {
     return (
       <Card className="p-6">
-        <p className="py-6 text-center text-slate-500">Carregando detalhes do usuário...</p>
+        <StateMessage>Carregando detalhes do usuário...</StateMessage>
       </Card>
     );
   }
@@ -547,21 +539,18 @@ export function AdminUsersPage() {
           }}
         >
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div className="flex flex-col gap-2 text-sm font-medium text-slate-700">
-              <label htmlFor="users-search">Busca</label>
+            <FormField id="users-search" label="Busca">
               <Input
                 id="users-search"
                 placeholder="Nome ou e-mail"
                 value={filters.search}
                 onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))}
               />
-            </div>
+            </FormField>
 
-            <div className="flex flex-col gap-2 text-sm font-medium text-slate-700">
-              <label htmlFor="users-role">Papel</label>
-              <select
+            <FormField id="users-role" label="Papel">
+              <Select
                 id="users-role"
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-hidden transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
                 value={filters.role}
                 onChange={(event) =>
                   setFilters((current) => ({
@@ -574,14 +563,12 @@ export function AdminUsersPage() {
                 <option value="USER">USER</option>
                 <option value="ADMIN">ADMIN</option>
                 <option value="SUPER_ADMIN">SUPER_ADMIN</option>
-              </select>
-            </div>
+              </Select>
+            </FormField>
 
-            <div className="flex flex-col gap-2 text-sm font-medium text-slate-700">
-              <label htmlFor="users-status">Status</label>
-              <select
+            <FormField id="users-status" label="Status">
+              <Select
                 id="users-status"
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-hidden transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
                 value={filters.isBanned}
                 onChange={(event) =>
                   setFilters((current) => ({
@@ -593,8 +580,8 @@ export function AdminUsersPage() {
                 <option value="">Todos</option>
                 <option value="false">Ativos</option>
                 <option value="true">Banidos</option>
-              </select>
-            </div>
+              </Select>
+            </FormField>
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -621,7 +608,6 @@ export function AdminUsersPage() {
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.3fr_1fr]">
         <UsersListSection
           isLoading={usersQuery.isLoading}
-          page={page}
           pagination={pagination}
           selectedUserId={selectedUserId}
           users={users}
