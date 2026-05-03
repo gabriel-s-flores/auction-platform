@@ -11,7 +11,7 @@ COPY apps/web/package.json ./apps/web/package.json
 # (If there are other apps, add them here or use a broader copy pattern if context allows, but specific is safer for caching)
 
 # Install dependencies (frozen lockfile is faster and safer for CI/prod, but ensuring we have dev deps for dev env)
-RUN bun install --frozen-lockfile
+RUN HUSKY=0 bun install --frozen-lockfile
 
 # Copy the rest of the source code for the API
 COPY apps/api ./apps/api

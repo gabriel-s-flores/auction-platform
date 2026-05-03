@@ -70,7 +70,7 @@ Utiliza **Docker Compose** para orquestrar API, Web e Banco de Dados. Ideal para
 #### Passos Rápidos
 
 1. **Setup Inicial**
-   Constrói os containers, sobe o banco, aplica migrações e popula com dados de teste (`seed`).
+   Cria os arquivos `.env` locais, constrói os containers da API/Web, sobe o banco, aplica migrações e popula com dados de teste (`seed`).
    ```bash
    make setup
    ```
@@ -80,8 +80,13 @@ Utiliza **Docker Compose** para orquestrar API, Web e Banco de Dados. Ideal para
    ```bash
    make dev
    ```
-   - **Frontend:** [http://localhost:5173](http://localhost:5173) (usuário admin: `admin@example.com` / `12345678`)
+   - **Frontend:** [http://localhost:5173](http://localhost:5173)
    - **API:** [http://localhost:3333](http://localhost:3333)
+
+   Usuários criados pelo seed:
+   - `superadmin@auction.local` / `superadmin123456`
+   - `admin@auction.local` / `admin123456`
+   - `user@auction.local` / `user123456`
 
 #### Comandos Úteis (Make)
 
